@@ -28,22 +28,22 @@ function calcularPatronDipper(descensoSYS, descensoDIA) {
   
   if (descenso >= 10 && descenso <= 20) {
     patron = 'Dipper';
-    descripcion = `Ritmo circadiano con disminución adecuada de la presión arterial nocturna. Descenso SYS: ${descensoSYS}%, DIA: ${descensoDIA}% (Normal: 10-20%).`;
-    conclusion = 'Patrón Dipper. Ritmo circadiano normal.';
+    descripcion = `Ritmo circadiano con disminución adecuada de la presión arterial sistólica durante la noche. Patrón ${patron}.`;
+    conclusion = `Patrón ${patron}.`;
   } else if (descenso < 10 && descenso >= -5) {
     // Incluye desde pequeños incrementos hasta < 10% de descenso
     patron = 'Non-Dipper';
-    descripcion = `Ritmo circadiano sin disminución significativa de la presión arterial nocturna. Descenso SYS: ${descensoSYS}%, DIA: ${descensoDIA}% (se esperaba 10-20%).`;
-    conclusion = 'Patrón Non-Dipper. Ausencia de descenso nocturno adecuado.';
+    descripcion = `Ritmo circadiano sin disminución significativa de la presión arterial sistólica durante la noche. Patrón ${patron}.`;
+    conclusion = `Patrón ${patron}.`;
   } else if (descenso > 20) {
     patron = 'Extreme Dipper';
-    descripcion = `Ritmo circadiano con disminución exagerada de la presión arterial nocturna. Descenso SYS: ${descensoSYS}%, DIA: ${descensoDIA}% (superior al 20% esperado).`;
-    conclusion = 'Patrón Extreme Dipper (Super Dipper). Descenso nocturno exagerado.';
+    descripcion = `Ritmo circadiano con disminución exagerada de la presión arterial sistólica durante la noche. Patrón ${patron}.`;
+    conclusion = `Patrón ${patron}.`;
   } else {
     // Incremento nocturno significativo (< -5%)
     patron = 'Riser';
-    descripcion = `Ritmo circadiano invertido con incremento significativo de la presión arterial nocturna. Cambio SYS: ${descensoSYS}%, DIA: ${descensoDIA}% (se esperaba descenso de 10-20%).`;
-    conclusion = 'Patrón Riser. Incremento nocturno significativo de la presión arterial.';
+    descripcion = `Ritmo circadiano invertido con incremento de la presión arterial sistólica durante la noche. Patrón ${patron}.`;
+    conclusion = `Patrón ${patron}.`;
   }
   
   return {
@@ -56,7 +56,7 @@ function calcularPatronDipper(descensoSYS, descensoDIA) {
 /**
  * Calcula la presión de pulso y la clasifica según la edad del paciente
  * 
- * Presión de Pulso = Presión Sistólica - Presión  Diastólica
+ * Presión de Pulso = Presión Sistólica - Presión Diastólica
  * 
  * Clasificación:
  * - Normal: 30-50 mmHg (puede variar con la edad)
@@ -78,20 +78,20 @@ function calcularPresionPulso(sistolica, diastolica, edad) {
   if (presionPulso < 30) {
     clasificacion = 'Baja';
     descripcion = `Promedio de la presión de pulso ${presionPulso} mmHg.`;
-    conclusion = `Presión de pulso Baja (${presionPulso} mmHg). Se considera normal entre 30-50 mmHg.`;
+    conclusion = `Presión de pulso ${clasificacion} (${presionPulso} mmHg).`;
   } else if (presionPulso >= 30 && presionPulso <= 50) {
     clasificacion = 'Normal';
     descripcion = `Promedio de la presión de pulso ${presionPulso} mmHg.`;
-    conclusion = `Presión de pulso Normal (${presionPulso} mmHg). Rango adecuado: 30-50 mmHg.`;
+    conclusion = `Presión de pulso ${clasificacion} (${presionPulso} mmHg).`;
   } else {
     clasificacion = 'Elevada';
     descripcion = `Promedio de la presión de pulso ${presionPulso} mmHg.`;
     
-    // Ajustar interpretación según la edad
+    // Conclusión concisa
     if (edad >= 60) {
-      conclusion = `Presión de pulso Elevada (${presionPulso} mmHg). Puede ser esperada en adultos mayores por rigidez arterial aumentada. Se sugiere evaluación cardiovascular.`;
+      conclusion = `Presión de pulso ${clasificacion} (${presionPulso} mmHg). Incremento del riesgo cardiovascular.`;
     } else {
-      conclusion = `Presión de pulso Elevada (${presionPulso} mmHg). Se considera normal entre 30-50 mmHg. Se sugiere evaluación cardiovascular.`;
+      conclusion = `Presión de pulso ${clasificacion} (${presionPulso} mmHg). Incremento del riesgo cardiovascular.`;
     }
   }
   
@@ -104,14 +104,13 @@ function calcularPresionPulso(sistolica, diastolica, edad) {
 }
 
 /**
- * Clasifica la presión arterial según las guías médicas
+ * Clasifica la presión arterial según las guías AHA 2025
  * 
  * Clasificación según valores promedio:
  * - Normal: < 120/80 mmHg
- * - Limítrofe (Prehipertensión): 120-139/80-89 mmHg
- * - Hipertensión Nivel 1: 140-159/90-99 mmHg
- * - Hipertensión Nivel 2: 160-179/100-109 mmHg
- * - Hipertensión Nivel 3: ≥ 180/110 mmHg
+ * - Elevada: 120-129/<80 mmHg
+ * - Hipertensión Nivel 1: 130-139/80-89 mmHg
+ * - Hipertensión Nivel 2: ≥140/≥90 mmHg
  * - HTA Sistólica Aislada: SYS ≥ 140 y DIA < 90 mmHg
  * 
  * @param {number} sistolica - Presión arterial sistólica promedio
@@ -119,21 +118,26 @@ function calcularPresionPulso(sistolica, diastolica, edad) {
  * @returns {string} - Clasificación de la presión arterial
  */
 function clasificarPresionArterial(sistolica, diastolica) {
-  // HTA Sistólica Aislada
+  // HTA Sistólica Aislada (sistólica elevada pero diastólica normal)
   if (sistolica >= 140 && diastolica < 90) {
     return 'Hipertensión Sistólica Aislada';
   }
   
   // Clasificación combinada (se toma el nivel más alto)
-  if (sistolica >= 180 || diastolica >= 110) {
-    return 'Hipertensión Nivel 3';
-  } else if (sistolica >= 160 || diastolica >= 100) {
+  // Nivel 2: ≥140 mmHg O ≥90 mmHg
+  if (sistolica >= 140 || diastolica >= 90) {
     return 'Hipertensión Nivel 2';
-  } else if (sistolica >= 140 || diastolica >= 90) {
+  } 
+  // Nivel 1: 130-139 mmHg O 80-89 mmHg
+  else if (sistolica >= 130 || diastolica >= 80) {
     return 'Hipertensión Nivel 1';
-  } else if (sistolica >= 120 || diastolica >= 80) {
-    return 'Limítrofe (Prehipertensión)';
-  } else {
+  } 
+  // Elevada: 120-129 mmHg y <80 mmHg
+  else if (sistolica >= 120 && diastolica < 80) {
+    return 'Presión Arterial Elevada';
+  } 
+  // Normal: <120/<80
+  else {
     return 'Normal';
   }
 }
