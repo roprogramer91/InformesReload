@@ -28,10 +28,12 @@ app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 // Importar rutas
 const pdfRoutes = require('./routes/pdfRoutes');
 const medicionesRoutes = require('./routes/medicionesRoutes');
+const informeRoutes = require('./routes/informeRoutes');
 
 // Usar rutas
 app.use('/api', pdfRoutes);
 app.use('/api', medicionesRoutes);
+app.use('/api', informeRoutes);
 
 // Ruta raíz
 app.get('/', (req, res) => {
@@ -39,9 +41,10 @@ app.get('/', (req, res) => {
     message: '🩺 Informatron API - Generador de Informes MAPA',
     version: '1.0.0',
     endpoints: {
-      test: '/test',
+      test: 'GET /test',
       uploadPDF: 'POST /api/upload-pdf',
-      updateMediciones: 'POST /api/actualizar-mediciones'
+      updateMediciones: 'POST /api/actualizar-mediciones',
+      generarInforme: 'POST /api/generar-informe'
     }
   });
 });
@@ -65,4 +68,5 @@ app.listen(PORT, () => {
   console.log(`   GET  /test - Prueba de conectividad`);
   console.log(`   POST /api/upload-pdf - Cargar PDF MAPA`);
   console.log(`   POST /api/actualizar-mediciones - Actualizar mediciones`);
+  console.log(`   POST /api/generar-informe - Generar y descargar informe Word`);
 });
