@@ -104,41 +104,44 @@ function calcularPresionPulso(sistolica, diastolica, edad) {
 }
 
 /**
- * Clasifica la presión arterial según las guías AHA 2025
+ * Clasifica la presión arterial según las guías médicas
  * 
- * Clasificación según valores promedio:
- * - Normal: < 120/80 mmHg
- * - Elevada: 120-129/<80 mmHg
- * - Hipertensión Nivel 1: 130-139/80-89 mmHg
- * - Hipertensión Nivel 2: ≥140/≥90 mmHg
- * - HTA Sistólica Aislada: SYS ≥ 140 y DIA < 90 mmHg
+ * Clasificación según valores promedio (ambos deben estar en rango):
+ * - Normal: < 120 Y <80 mmHg
+ * - Elevada: 120-129 Y <80 mmHg
+ * - Hipertensión Nivel 1: 130-159 Y/O 80-99 mmHg
+ * - Hipertensión Nivel 2: ≥160 Y/O ≥100 mmHg
+ * - HTA Sistólica Aislada: SYS ≥ 140 y DIA < 80 mmHg
  * 
  * @param {number} sistolica - Presión arterial sistólica promedio
  * @param {number} diastolica - Presión arterial diastólica promedio
  * @returns {string} - Clasificación de la presión arterial
  */
 function clasificarPresionArterial(sistolica, diastolica) {
-  // HTA Sistólica Aislada (sistólica elevada pero diastólica normal)
-  if (sistolica >= 140 && diastolica < 90) {
+  // HTA Sistólica Aislada (sistólica alta pero diastólica normal < 80)
+  if (sistolica >= 140 && diastolica < 80) {
     return 'Hipertensión Sistólica Aislada';
   }
   
-  // Clasificación combinada (se toma el nivel más alto)
-  // Nivel 2: ≥140 mmHg O ≥90 mmHg
-  if (sistolica >= 140 || diastolica >= 90) {
+  // Nivel 2: Sistólica ≥160 O Diastólica ≥100
+  if (sistolica >= 160 || diastolica >= 100) {
     return 'Hipertensión Nivel 2';
   } 
-  // Nivel 1: 130-139 mmHg O 80-89 mmHg
-  else if (sistolica >= 130 || diastolica >= 80) {
+  // Nivel 1: Sistólica 130-159 O Diastólica 80-99
+  else if ((sistolica >= 130 && sistolica < 160) || (diastolica >= 80 && diastolica < 100)) {
     return 'Hipertensión Nivel 1';
   } 
   // Elevada: 120-129 mmHg y <80 mmHg
-  else if (sistolica >= 120 && diastolica < 80) {
+  else if (sistolica >= 120 && sistolica < 130 && diastolica < 80) {
     return 'Presión Arterial Elevada';
   } 
   // Normal: <120/<80
-  else {
+  else if (sistolica < 120 && diastolica < 80) {
     return 'Normal';
+  }
+  // Por defecto (no debería llegar aquí)
+  else {
+    return 'Hipertensión Nivel 1';
   }
 }
 
@@ -198,22 +201,27 @@ function formatearFecha(fechaOriginal) {
 }
 
 /**
- * Ajusta las horas de duración (redondea según minutos)
+ * Ajusta las horas de duración (máximo 24 horas)
  * Formato entrada: "24H37M"
  * 
  * @param {string} duracion - Duración en formato XH YM
- * @returns {number} - Horas ajustadas (redondeadas)
+ * @returns {number} - Horas (máximo 24)
  */
 function ajustarHoraDuracion(duracion) {
   try {
     const match = duracion.match(/(\d+)H(\d+)M/);
     if (!match) return 0;
     
-    const horas = parseInt(match[1]);
+    let horas = parseInt(match[1]);
     const minutos = parseInt(match[2]);
     
-    // Redondear: >= 30 minutos suma 1 hora
-    return minutos >= 30 ? horas + 1 : horas;
+    // Si tiene minutos >= 30, sumar 1 hora
+    if (minutos >= 30) {
+      horas += 1;
+    }
+    
+    // El máximo siempre es 24 horas
+    return horas >= 24 ? 24 : horas;
   } catch (error) {
     console.error('Error al ajustar duración:', error);
     return 0;
