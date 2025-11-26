@@ -4,27 +4,65 @@ const morgan = require('morgan');
 
 const app = express();
 
-// Middleware
-app.use(cors());
+// ====================
+// MIDDLEWARE
+// ====================
+
+// CORS - Permitir peticiones desde el frontend
+app.use(cors({
+  origin: '*', // En producción, especificar el dominio del frontend
+  exposedHeaders: ['Content-Disposition'] // Necesario para descargas de archivos
+}));
+
+// Morgan - Logger de peticiones HTTP
 app.use(morgan('dev'));
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
 
-// Basic route to test server
+// Parsear JSON y URL-encoded data
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ extended: true, limit: '50mb' }));
+
+// ====================
+// RUTAS
+// ====================
+
+// Importar rutas
+const pdfRoutes = require('./routes/pdfRoutes');
+const medicionesRoutes = require('./routes/medicionesRoutes');
+
+// Usar rutas
+app.use('/api', pdfRoutes);
+app.use('/api', medicionesRoutes);
+
+// Ruta raíz
 app.get('/', (req, res) => {
-  res.json({ message: 'Backend server is running!' });
+  res.json({
+    message: '🩺 Informatron API - Generador de Informes MAPA',
+    version: '1.0.0',
+    endpoints: {
+      test: '/test',
+      uploadPDF: 'POST /api/upload-pdf',
+      updateMediciones: 'POST /api/actualizar-mediciones'
+    }
+  });
 });
 
-// Health check endpoint
-app.get('/health', (req, res) => {
-  res.json({ status: 'OK', timestamp: new Date().toISOString() });
+// Ruta de prueba
+app.get('/test', (req, res) => {
+  res.send('✅ El servidor está corriendo correctamente.');
 });
 
-// Port configuration
+// ====================
+// PUERTO Y ARRANQUE
+// ====================
+
 const PORT = process.env.PORT || 3000;
 
-// Start server
 app.listen(PORT, () => {
-  console.log(`🚀 Server is listening on port ${PORT}`);
-  console.log(`📡 Health check: http://localhost:${PORT}/health`);
+  console.log(`🚀 Informatron API iniciado`);
+  console.log(`📡 Servidor escuchando en http://localhost:${PORT}`);
+  console.log(`📋 Endpoints disponibles:`);
+  console.log(`   GET  / - Información de la API`);
+  console.log(`   GET  /test - Prueba de conectividad`);
+  console.log(`   POST /api/upload-pdf - Cargar PDF MAPA`);
+  console.log(`   POST /api/actualizar-mediciones - Actualizar mediciones`);
 });
