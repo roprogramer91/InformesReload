@@ -7,7 +7,7 @@
 // CONFIGURACIÓN
 // =====================================================
 
-const API_BASE_URL = 'https://informesreload-production.up.railway.app:8080';
+const API_BASE_URL = 'https://informesreload-production.up.railway.app';
 
 // Estado global de la aplicación
 const appState = {
