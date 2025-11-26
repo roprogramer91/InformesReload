@@ -108,6 +108,18 @@ function resetWizard() {
   medicionesNocturnas.value = '';
   btnStep3.disabled = true;
   
+  // Resetear botón de actualizar mediciones
+  btnUpdateMeasurements.disabled = false;
+  btnUpdateMeasurements.textContent = 'Actualizar Datos';
+  btnUpdateMeasurements.style.background = '';
+  btnUpdateMeasurements.style.color = '';
+  
+  // Resetear botón de generar informe
+  btnGenerate.disabled = false;
+  btnGenerate.textContent = 'Generar y Descargar Informe';
+  btnGenerate.style.background = '';
+  loadingGenerate.style.display = 'none';
+  
   goToStep(1);
 }
 
@@ -294,7 +306,16 @@ btnUpdateMeasurements.addEventListener('click', async () => {
       btnUpdateMeasurements.style.background = 'var(--emerald-500)';
       btnUpdateMeasurements.style.color = 'white';
       
+      // Mostrar advertencia si el estudio no es válido
+      if (result.validacion && !result.validacion.valido) {
+        const motivos = result.validacion.motivos.join('\n• ');
+        alert(`⚠️ ADVERTENCIA - El estudio no cumple los criterios mínimos:\n\n• ${motivos}\n\nSe generará un informe indicando que el estudio debe repetirse.`);
+      }
+      
       console.log('✅ Mediciones actualizadas:', appState.pacienteData);
+      if (result.validacion) {
+        console.log('Validación:', result.validacion);
+      }
     } else {
       throw new Error(result.message || 'Error al actualizar mediciones');
     }
