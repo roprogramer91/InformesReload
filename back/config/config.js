@@ -5,12 +5,30 @@
  * incluyendo plantillas Word y logos asociados.
  */
 
+// =====================================================
+// PARÁMETROS CONFIGURABLES
+// =====================================================
+
+/**
+ * HORAS MÍNIMAS para considerar un estudio MAPA como válido
+ * Si el estudio tiene menos horas, se usa la plantilla "FaltaInfo"
+ * 
+ * IMPORTANTE: Este valor puede cambiar según criterio médico
+ * Modificar solo este número para ajustar el umbral
+ */
+const HORAS_MINIMAS_ESTUDIO = 17;
+
+// =====================================================
+// CONFIGURACIÓN DE INSTITUCIONES
+// =====================================================
+
 const INSTITUCIONES = {
   consultoriosMedicos: {
     id: 'consultoriosMedicos',
     nombre: 'Consultorios Médicos',
     nombreCompleto: 'Consultorios Médicos - Centro de Diagnóstico',
     plantilla: 'PlantillaA.docx',
+    plantillaFaltaInfo: 'plantillaFaltaInfo-cm.docx',
     logo: 'consultorios_medicos.png',
     descripcion: 'Centro de diagnóstico médico especializado'
   },
@@ -20,6 +38,7 @@ const INSTITUCIONES = {
     nombre: 'Vital Norte',
     nombreCompleto: 'Vital Norte - Instituto de Salud',
     plantilla: 'PlantillaB.docx',
+    plantillaFaltaInfo: 'plantillaFaltaInfo-VN.docx',
     logo: 'vital_norte.png',
     descripcion: 'Instituto de salud integral'
   }
@@ -54,9 +73,31 @@ function obtenerTodasLasInstituciones() {
   return Object.values(INSTITUCIONES);
 }
 
+/**
+ * Obtiene el umbral mínimo de horas para un estudio válido
+ * 
+ * @returns {number} - Horas mínimas requeridas
+ */
+function obtenerHorasMinimasEstudio() {
+  return HORAS_MINIMAS_ESTUDIO;
+}
+
+/**
+ * Verifica si un estudio tiene suficientes horas
+ * 
+ * @param {number} horas - Duración del estudio en horas
+ * @returns {boolean} - true si cumple el mínimo, false si no
+ */
+function esEstudioValido(horas) {
+  return horas >= HORAS_MINIMAS_ESTUDIO;
+}
+
 module.exports = {
   INSTITUCIONES,
+  HORAS_MINIMAS_ESTUDIO,
   obtenerConfiguracionInstitucion,
   esInstitucionValida,
-  obtenerTodasLasInstituciones
+  obtenerTodasLasInstituciones,
+  obtenerHorasMinimasEstudio,
+  esEstudioValido
 };

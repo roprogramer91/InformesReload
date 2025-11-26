@@ -9,7 +9,10 @@ const fs = require('fs');
 const path = require('path');
 const Docxtemplater = require('docxtemplater');
 const PizZip = require('pizzip');
-const { obtenerConfiguracionInstitucion } = require('../config/config');
+const { 
+  obtenerConfiguracionInstitucion, 
+  esEstudioValido 
+} = require('../config/config');
 
 /**
  * Genera un informe médico en formato Word
@@ -28,10 +31,24 @@ function generarInforme(paciente, institucionId) {
     }
     
     console.log(`📄 Generando informe para institución: ${institucion.nombre}`);
-    console.log(`📋 Plantilla: ${institucion.plantilla}`);
+    
+    // Determinar qué plantilla usar según la duración del estudio
+    const duracionHoras = paciente.duracionHoras || 0;
+    const esValido = esEstudioValido(duracionHoras);
+    
+    let plantillaAUsar;
+    if (esValido) {
+      // Estudio válido: usar plantilla normal
+      plantillaAUsar = institucion.plantilla;
+      console.log(`✅ Estudio válido (${duracionHoras} hrs) - Plantilla: ${plantillaAUsar}`);
+    } else {
+      // Estudio insuficiente: usar plantilla "FaltaInfo"
+      plantillaAUsar = institucion.plantillaFaltaInfo;
+      console.log(`⚠️  Estudio insuficiente (${duracionHoras} hrs) - Plantilla: ${plantillaAUsar}`);
+    }
     
     // Cargar la plantilla
-    const plantillaPath = path.join(__dirname, '../templates', institucion.plantilla);
+    const plantillaPath = path.join(__dirname, '../templates', plantillaAUsar);
     
     if (!fs.existsSync(plantillaPath)) {
       throw new Error(`No se encontró la plantilla: ${plantillaPath}`);
@@ -112,6 +129,49 @@ function generarInforme(paciente, institucionId) {
     throw new Error(`Error al generar informe: ${error.message}`);
   }
 }
+
+/**
+ * Genera un informe y lo guarda en un archivo
+ * 
+ * @param {Object} paciente - Objeto con los datos del paciente
+ * @param {string} institucionId - ID de la institución
+ * @param {string} rutaSalida - Ruta donde guardar el archivo (opcional)
+ * @returns {string} - Ruta del archivo generado
+ */
+function generarYGuardarInforme(paciente, institucionId, rutaSalida) {
+  try {
+    // Generar el informe
+    const buffer = generarInforme(paciente, institucionId);
+    
+    // Determinar la ruta de salida
+    if (!rutaSalida) {
+      const nombreArchivo = `${paciente.nombre.replace(/\s+/g, '_')}.docx`;
+      rutaSalida = path.join(__dirname, '../output', nombreArchivo);
+    }
+    
+    // Asegurar que existe el directorio de salida
+    const dirSalida = path.dirname(rutaSalida);
+    if (!fs.existsSync(dirSalida)) {
+      fs.mkdirSync(dirSalida, { recursive: true });
+    }
+    
+    // Guardar el archivo
+    fs.writeFileSync(rutaSalida, buffer);
+    
+    console.log(`💾 Informe guardado en: ${rutaSalida}`);
+    
+    return rutaSalida;
+    
+  } catch (error) {
+    console.error('❌ Error al guardar informe:', error);
+    throw error;
+  }
+}
+
+module.exports = {
+  generarInforme,
+  generarYGuardarInforme
+};
 
 /**
  * Genera un informe y lo guarda en un archivo
