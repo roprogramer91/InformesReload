@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Informatron - Generador de Informes MAPA</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <!-- Header -->
+    <header class="header">
+      <div class="container">
+        <h1 class="header-title">🩺 Informatron</h1>
+        <p class="header-subtitle">Generador de Informes MAPA</p>
+      </div>
+    </header>
+
+    <!-- Progress Indicator -->
+    <div class="progress-container">
+      <div class="container">
+        <div class="progress-steps">
+          <div class="progress-step active" data-step="1">
+            <div class="step-circle">1</div>
+            <div class="step-label">Institución</div>
+          </div>
+          <div class="progress-step" data-step="2">
+            <div class="step-circle">2</div>
+            <div class="step-label">Cargar PDF</div>
+          </div>
+          <div class="progress-step" data-step="3">
+            <div class="step-circle">3</div>
+            <div class="step-label">Mediciones</div>
+          </div>
+          <div class="progress-step" data-step="4">
+            <div class="step-circle">4</div>
+            <div class="step-label">Generar</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Main Content -->
+    <main class="main-content">
+      <div class="container">
+        <!-- PASO 1: Selección de Institución -->
+        <div class="wizard-step active" id="step-1">
+          <div class="step-header">
+            <h2>Seleccione la Institución</h2>
+            <p>Elija la institución médica para generar el informe</p>
+          </div>
+
+          <div class="institutions-grid">
+            <div class="institution-card" data-id="consultoriosMedicos">
+              <div class="institution-icon">🏥</div>
+              <h3>Consultorios Médicos</h3>
+              <p>Centro de Diagnóstico</p>
+            </div>
+
+            <div class="institution-card" data-id="vitalNorte">
+              <div class="institution-icon">❤️</div>
+              <h3>Vital Norte</h3>
+              <p>Instituto de Salud</p>
+            </div>
+          </div>
+
+          <div class="step-actions">
+            <button class="btn btn-primary" id="btn-step-1" disabled>
+              Siguiente
+            </button>
+          </div>
+        </div>
+
+        <!-- PASO 2: Carga de PDF -->
+        <div class="wizard-step" id="step-2">
+          <div class="step-header">
+            <h2>Cargar PDF MAPA</h2>
+            <p>Arrastre el archivo PDF o haga clic para seleccionarlo</p>
+          </div>
+
+          <div class="upload-container">
+            <div class="upload-area" id="upload-area">
+              <div class="upload-icon">📄</div>
+              <p class="upload-text">
+                Arrastra el PDF aquí o haz clic para seleccionar
+              </p>
+              <p class="upload-subtext">Solo archivos PDF</p>
+              <input type="file" id="pdf-input" accept=".pdf" hidden />
+            </div>
+
+            <div class="file-info" id="file-info" style="display: none">
+              <div class="file-icon">✅</div>
+              <div class="file-details">
+                <p class="file-name" id="file-name"></p>
+                <p class="file-size" id="file-size"></p>
+              </div>
+              <button class="file-remove" id="btn-remove-file">✕</button>
+            </div>
+
+            <div class="loading-spinner" id="loading-pdf" style="display: none">
+              <div class="spinner"></div>
+              <p>Procesando PDF...</p>
+            </div>
+          </div>
+
+          <div class="step-actions">
+            <button class="btn btn-secondary" id="btn-back-2">Atrás</button>
+            <button class="btn btn-primary" id="btn-step-2" disabled>
+              Siguiente
+            </button>
+          </div>
+        </div>
+
+        <!-- PASO 3: Mediciones -->
+        <div class="wizard-step" id="step-3">
+          <div class="step-header">
+            <h2>Ingrese las Mediciones</h2>
+            <p>Complete las mediciones diurnas y nocturnas</p>
+          </div>
+
+          <div class="patient-info" id="patient-info">
+            <h3>Paciente: <span id="patient-name">-</span></h3>
+            <p>Edad: <span id="patient-age">-</span> años</p>
+          </div>
+
+          <div class="measurements-form">
+            <div class="form-group">
+              <label for="mediciones-diurnas">Mediciones Diurnas</label>
+              <input
+                type="number"
+                id="mediciones-diurnas"
+                class="form-input"
+                placeholder="Ej: 59"
+                min="1"
+              />
+            </div>
+
+            <div class="form-group">
+              <label for="mediciones-nocturnas">Mediciones Nocturnas</label>
+              <input
+                type="number"
+                id="mediciones-nocturnas"
+                class="form-input"
+                placeholder="Ej: 18"
+                min="1"
+              />
+            </div>
+
+            <button
+              class="btn btn-secondary-outline"
+              id="btn-update-measurements"
+            >
+              Actualizar Datos
+            </button>
+          </div>
+
+          <div class="step-actions">
+            <button class="btn btn-secondary" id="btn-back-3">Atrás</button>
+            <button class="btn btn-primary" id="btn-step-3" disabled>
+              Siguiente
+            </button>
+          </div>
+        </div>
+
+        <!-- PASO 4: Generar Informe -->
+        <div class="wizard-step" id="step-4">
+          <div class="step-header">
+            <h2>Generar Informe</h2>
+            <p>Revise los datos y genere el informe médico</p>
+          </div>
+
+          <div class="summary-card">
+            <h3>Resumen</h3>
+            <div class="summary-grid">
+              <div class="summary-item">
+                <span class="summary-label">Paciente:</span>
+                <span class="summary-value" id="summary-name">-</span>
+              </div>
+              <div class="summary-item">
+                <span class="summary-label">Edad:</span>
+                <span class="summary-value" id="summary-age">-</span>
+              </div>
+              <div class="summary-item">
+                <span class="summary-label">Institución:</span>
+                <span class="summary-value" id="summary-institution">-</span>
+              </div>
+              <div class="summary-item">
+                <span class="summary-label">Mediciones Diurnas:</span>
+                <span class="summary-value" id="summary-diurnas">-</span>
+              </div>
+              <div class="summary-item">
+                <span class="summary-label">Mediciones Nocturnas:</span>
+                <span class="summary-value" id="summary-nocturnas">-</span>
+              </div>
+            </div>
+          </div>
+
+          <div
+            class="loading-spinner"
+            id="loading-generate"
+            style="display: none"
+          >
+            <div class="spinner"></div>
+            <p>Generando informe...</p>
+          </div>
+
+          <div class="step-actions">
+            <button class="btn btn-secondary-outline" id="btn-restart">
+              Inicio
+            </button>
+            <button class="btn btn-success" id="btn-generate">
+              Generar y Descargar Informe
+            </button>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+      <div class="container">
+        <p>&copy; 2025 Informatron. Generador de Informes MAPA.</p>
+      </div>
+    </footer>
+
+    <script src="scripts/main.js"></script>
+  </body>
+</html>
