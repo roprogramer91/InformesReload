@@ -34,7 +34,7 @@ const INSTITUCIONES = {
     nombre: 'Consultorios Médicos',
     nombreCompleto: 'Consultorios Médicos - Centro de Diagnóstico',
     plantilla: 'PlantillaA.docx',
-    plantillaFaltaInfo: 'plantillaFaltaInfo-cm.docx',
+    plantillaFaltaInfo: 'PlantillaFaltaInfo-CM.docx',
     logo: 'consultorios_medicos.png',
     descripcion: 'Centro de diagnóstico médico especializado'
   },
@@ -44,7 +44,7 @@ const INSTITUCIONES = {
     nombre: 'Vital Norte',
     nombreCompleto: 'Vital Norte - Instituto de Salud',
     plantilla: 'PlantillaB.docx',
-    plantillaFaltaInfo: 'plantillaFaltaInfo-VN.docx',
+    plantillaFaltaInfo: 'PlantillaFaltaInfo-VN.docx',
     logo: 'vital_norte.png',
     descripcion: 'Instituto de salud integral'
   }
