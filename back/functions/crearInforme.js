@@ -11,7 +11,7 @@ const Docxtemplater = require('docxtemplater');
 const PizZip = require('pizzip');
 const { 
   obtenerConfiguracionInstitucion, 
-  esEstudioValido 
+  validarEstudioCompleto
 } = require('../config/config');
 
 /**
@@ -32,19 +32,33 @@ function generarInforme(paciente, institucionId) {
     
     console.log(`📄 Generando informe para institución: ${institucion.nombre}`);
     
-    // Determinar qué plantilla usar según la duración del estudio
+    // Validar estudio completo (horas + mediciones)
     const duracionHoras = paciente.duracionHoras || 0;
-    const esValido = esEstudioValido(duracionHoras);
+    const medicionesDiurnas = paciente.medicionesDiurnas || 0;
+    const medicionesNocturnas = paciente.medicionesNocturnas || 0;
     
+    const validacion = validarEstudioCompleto(
+      duracionHoras,
+      medicionesDiurnas,
+      medicionesNocturnas
+    );
+    
+    // Determinar qué plantilla usar
     let plantillaAUsar;
-    if (esValido) {
+    if (validacion.valido) {
       // Estudio válido: usar plantilla normal
       plantillaAUsar = institucion.plantilla;
-      console.log(`✅ Estudio válido (${duracionHoras} hrs) - Plantilla: ${plantillaAUsar}`);
+      console.log(`✅ Estudio VÁLIDO`);
+      console.log(`   - Duración: ${duracionHoras} hrs`);
+      console.log(`   - Mediciones diurnas: ${medicionesDiurnas}`);
+      console.log(`   - Mediciones nocturnas: ${medicionesNocturnas}`);
+      console.log(`   - Plantilla: ${plantillaAUsar}`);
     } else {
       // Estudio insuficiente: usar plantilla "FaltaInfo"
       plantillaAUsar = institucion.plantillaFaltaInfo;
-      console.log(`⚠️  Estudio insuficiente (${duracionHoras} hrs) - Plantilla: ${plantillaAUsar}`);
+      console.log(`⚠️  Estudio INSUFICIENTE - Motivos:`);
+      validacion.motivos.forEach(motivo => console.log(`   - ${motivo}`));
+      console.log(`   - Plantilla: ${plantillaAUsar}`);
     }
     
     // Cargar la plantilla

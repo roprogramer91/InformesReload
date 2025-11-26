@@ -4,10 +4,37 @@
 
 const express = require('express');
 const router = express.Router();
+const { validarEstudioCompleto, obtenerMedicionesMinimasEstudio, obtenerHorasMinimasEstudio } = require('../config/config');
+
+/**
+ * GET /api/criterios-validacion
+ * Retorna los criterios mínimos para un estudio válido
+ */
+router.get('/criterios-validacion', (req, res) => {
+  try {
+    const criterios = {
+      horasMinimas: obtenerHorasMinimasEstudio(),
+      mediciones: obtenerMedicionesMinimasEstudio()
+    };
+    
+    res.json({
+      success: true,
+      data: criterios
+    });
+  } catch (error) {
+    console.error('❌ Error al obtener criterios:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error al obtener criterios de validación',
+      error: error.message
+    });
+  }
+});
 
 /**
  * POST /api/actualizar-mediciones
  * Actualiza las mediciones diurnas y nocturnas del paciente
+ * Incluye validación según criterios médicos
  */
 router.post('/actualizar-mediciones', (req, res) => {
   try {
@@ -46,16 +73,30 @@ router.post('/actualizar-mediciones', (req, res) => {
       medicionesNocturnas: nocturnas
     };
     
+    // Validar estudio completo
+    const horas = paciente.duracionHoras || 0;
+    const validacion = validarEstudioCompleto(horas, diurnas, nocturnas);
+    
     console.log('✅ Mediciones actualizadas:', {
       paciente: pacienteActualizado.nombre,
       diurnas,
-      nocturnas
+      nocturnas,
+      horas,
+      esValido: validacion.valido
     });
+    
+    if (!validacion.valido) {
+      console.log('⚠️  Advertencia - Estudio no cumple criterios mínimos:');
+      validacion.motivos.forEach(motivo => console.log(`   - ${motivo}`));
+    }
     
     res.json({
       success: true,
       data: pacienteActualizado,
-      message: 'Mediciones actualizadas correctamente'
+      validacion: validacion,
+      message: validacion.valido 
+        ? 'Mediciones actualizadas correctamente' 
+        : 'Mediciones actualizadas. ADVERTENCIA: El estudio no cumple los criterios mínimos de validación.'
     });
     
   } catch (error) {
