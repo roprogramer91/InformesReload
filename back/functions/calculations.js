@@ -137,7 +137,7 @@ function clasificarPresionArterial(sistolica, diastolica) {
   } 
   // Normal: <120/<80
   else if (sistolica < 120 && diastolica < 80) {
-    return 'Normal';
+    return 'Presión Arterial Normal';
   }
   // Por defecto (no debería llegar aquí)
   else {
