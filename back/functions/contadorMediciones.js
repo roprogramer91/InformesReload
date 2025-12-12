@@ -17,10 +17,11 @@
  */
 function contarMedicionesDiaNoche(textoPDF) {
   try {
-    // Regex para capturar filas de medición con formato:
-    // numero + fecha (YYYY/MM/DD o YYYY/M/D) + hora (HH:MM)
-    // Ejemplo: "42 2025/12/4 18:45 125 98 86 ↑ 39 65 0"
-    const regexMedicion = /^\s*\d+\s+(\d{4}\/\d{1,2}\/\d{1,2})\s+(\d{1,2}):(\d{2})\s+\d+/gm;
+    // Regex para capturar filas de medición con formato del PDF real:
+    // numero (puede tener + o ++) + tabs/espacios + fecha + tabs/espacios + hora
+    // Ejemplo: "1+ 	2025/11/14 08:57 	186 ↑ 144"
+    // Ejemplo: "42 2025/12/4 18:45 125 98 86"
+    const regexMedicion = /^\s*\d+\+*\s+(\d{4}\/\d{1,2}\/\d{1,2})\s+(\d{1,2}):(\d{2})\s+/gm;
     
     let diurnas = 0;
     let nocturnas = 0;
