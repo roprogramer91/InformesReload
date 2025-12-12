@@ -47,7 +47,9 @@ const patientName = document.getElementById('patient-name');
 const patientAge = document.getElementById('patient-age');
 const medicionesDiurnas = document.getElementById('mediciones-diurnas');
 const medicionesNocturnas = document.getElementById('mediciones-nocturnas');
-const btnUpdateMeasurements = document.getElementById('btn-update-measurements');
+const medicionesDiurnasDisplay = document.getElementById('mediciones-diurnas-display');
+const medicionesNocturnasDisplay = document.getElementById('mediciones-nocturnas-display');
+const totalMedicionesDisplay = document.getElementById('total-mediciones-display');
 const btnBack3 = document.getElementById('btn-back-3');
 const btnStep3 = document.getElementById('btn-step-3');
 
@@ -106,13 +108,15 @@ function resetWizard() {
   // Resetear mediciones
   medicionesDiurnas.value = '';
   medicionesNocturnas.value = '';
-  btnStep3.disabled = true;
-  
-  // Resetear botón de actualizar mediciones
-  btnUpdateMeasurements.disabled = false;
-  btnUpdateMeasurements.textContent = 'Actualizar Datos';
-  btnUpdateMeasurements.style.background = '';
-  btnUpdateMeasurements.style.color = '';
+  if (medicionesDiurnasDisplay) {
+    medicionesDiurnasDisplay.querySelector('.measurement-value').textContent = '-';
+  }
+  if (medicionesNocturnasDisplay) {
+    medicionesNocturnasDisplay.querySelector('.measurement-value').textContent = '-';
+  }
+  if (totalMedicionesDisplay) {
+    totalMedicionesDisplay.querySelector('.measurement-value').textContent = '-';
+  }
   
   // Resetear botón de generar informe
   btnGenerate.disabled = false;
@@ -258,6 +262,28 @@ btnStep2.addEventListener('click', () => {
     patientName.textContent = appState.pacienteData.nombre;
     patientAge.textContent = appState.pacienteData.edad;
     
+    // Mostrar mediciones automáticas calculadas del PDF
+    const diurnas = appState.pacienteData.medicionesDiurnas || 0;
+    const nocturnas = appState.pacienteData.medicionesNocturnas || 0;
+    const total = appState.pacienteData.totalMediciones || (diurnas + nocturnas);
+    
+    // Actualizar displays visuales
+    if (medicionesDiurnasDisplay) {
+      medicionesDiurnasDisplay.querySelector('.measurement-value').textContent = diurnas;
+    }
+    if (medicionesNocturnasDisplay) {
+      medicionesNocturnasDisplay.querySelector('.measurement-value').textContent = nocturnas;
+    }
+    if (totalMedicionesDisplay) {
+      totalMedicionesDisplay.querySelector('.measurement-value').textContent = total;
+    }
+    
+    // Actualizar inputs ocultos (para compatibilidad)
+    medicionesDiurnas.value = diurnas;
+    medicionesNocturnas.value = nocturnas;
+    
+    console.log('✅ Mediciones automáticas mostradas:', { diurnas, nocturnas, total });
+    
     goToStep(3);
   }
 });
@@ -266,80 +292,9 @@ btnStep2.addEventListener('click', () => {
 // PASO 3: MEDICIONES
 // =====================================================
 
-// Actualizar mediciones
-btnUpdateMeasurements.addEventListener('click', async () => {
-  const diurnas = parseInt(medicionesDiurnas.value);
-  const nocturnas = parseInt(medicionesNocturnas.value);
-  
-  if (!diurnas || !nocturnas || diurnas < 1 || nocturnas < 1) {
-    alert('Por favor, ingrese valores válidos para ambas mediciones');
-    return;
-  }
-  
-  try {
-    btnUpdateMeasurements.disabled = true;
-    btnUpdateMeasurements.textContent = 'Actualizando...';
-    
-    const response = await fetch(`${API_BASE_URL}/api/actualizar-mediciones`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        paciente: appState.pacienteData,
-        medicionesDiurnas: diurnas,
-        medicionesNocturnas: nocturnas
-      })
-    });
-    
-    const result = await response.json();
-    
-    if (result.success) {
-      appState.pacienteData = result.data;
-      appState.medicionesActualizadas = true;
-      
-      // Habilitar siguiente
-      btnStep3.disabled = false;
-      
-      // Mensaje de éxito
-      btnUpdateMeasurements.textContent = '✓ Datos Actualizados';
-      btnUpdateMeasurements.style.background = 'var(--emerald-500)';
-      btnUpdateMeasurements.style.color = 'white';
-      
-      // Mostrar advertencia si el estudio no es válido
-      if (result.validacion && !result.validacion.valido) {
-        const motivos = result.validacion.motivos.join('\n• ');
-        alert(`⚠️ ADVERTENCIA - El estudio no cumple los criterios mínimos:\n\n• ${motivos}\n\nSe generará un informe indicando que el estudio debe repetirse.`);
-      }
-      
-      console.log('✅ Mediciones actualizadas:', appState.pacienteData);
-      if (result.validacion) {
-        console.log('Validación:', result.validacion);
-      }
-    } else {
-      throw new Error(result.message || 'Error al actualizar mediciones');
-    }
-  } catch (error) {
-    console.error('❌ Error:', error);
-    alert('Error al actualizar mediciones: ' + error.message);
-    btnUpdateMeasurements.disabled = false;
-    btnUpdateMeasurements.textContent = 'Actualizar Datos';
-  }
-});
+// Las mediciones ya están calculadas automáticamente, el paso 3 solo muestra los valores
+// El botón de siguiente está siempre habilitado porque los valores ya vienen del PDF
 
-// Validar inputs
-[medicionesDiurnas, medicionesNocturnas].forEach(input => {
-  input.addEventListener('input', () => {
-    // Resetear estado de actualización
-    if (appState.medicionesActualizadas) {
-      appState.medicionesActualizadas = false;
-      btnStep3.disabled = true;
-      btnUpdateMeasurements.textContent = 'Actualizar Datos';
-      btnUpdateMeasurements.style.background = '';
-      btnUpdateMeasurements.style.color = '';
-    }
-  });
-});
 
 // Navegación
 btnBack3.addEventListener('click', () => {
@@ -347,7 +302,7 @@ btnBack3.addEventListener('click', () => {
 });
 
 btnStep3.addEventListener('click', () => {
-  if (appState.medicionesActualizadas && appState.pacienteData) {
+  if (appState.pacienteData) {
     // Actualizar resumen
     summaryName.textContent = appState.pacienteData.nombre;
     summaryAge.textContent = `${appState.pacienteData.edad} años`;

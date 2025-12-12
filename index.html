@@ -113,8 +113,8 @@
         <!-- PASO 3: Mediciones -->
         <div class="wizard-step" id="step-3">
           <div class="step-header">
-            <h2>Ingrese las Mediciones</h2>
-            <p>Complete las mediciones diurnas y nocturnas</p>
+            <h2>Mediciones Calculadas</h2>
+            <p>Las mediciones han sido calculadas automáticamente del PDF</p>
           </div>
 
           <div class="patient-info" id="patient-info">
@@ -123,39 +123,42 @@
           </div>
 
           <div class="measurements-form">
+            <div class="auto-badge">
+              ✨ Calculadas automáticamente
+            </div>
+            
             <div class="form-group">
-              <label for="mediciones-diurnas">Mediciones Diurnas</label>
-              <input
-                type="number"
-                id="mediciones-diurnas"
-                class="form-input"
-                placeholder="Ej: 59"
-                min="1"
-              />
+              <label for="mediciones-diurnas-display">Mediciones Diurnas (07:00 - 21:59)</label>
+              <div class="measurement-display" id="mediciones-diurnas-display">
+                <span class="measurement-value">-</span>
+                <span class="measurement-label">mediciones</span>
+              </div>
             </div>
 
             <div class="form-group">
-              <label for="mediciones-nocturnas">Mediciones Nocturnas</label>
-              <input
-                type="number"
-                id="mediciones-nocturnas"
-                class="form-input"
-                placeholder="Ej: 18"
-                min="1"
-              />
+              <label for="mediciones-nocturnas-display">Mediciones Nocturnas (22:00 - 06:59)</label>
+              <div class="measurement-display" id="mediciones-nocturnas-display">
+                <span class="measurement-value">-</span>
+                <span class="measurement-label">mediciones</span>
+              </div>
             </div>
 
-            <button
-              class="btn btn-secondary-outline"
-              id="btn-update-measurements"
-            >
-              Actualizar Datos
-            </button>
+            <div class="form-group">
+              <label for="total-mediciones-display">Total de Mediciones</label>
+              <div class="measurement-display total" id="total-mediciones-display">
+                <span class="measurement-value">-</span>
+                <span class="measurement-label">mediciones</span>
+              </div>
+            </div>
+
+            <!-- Inputs ocultos para mantener compatibilidad -->
+            <input type="hidden" id="mediciones-diurnas" />
+            <input type="hidden" id="mediciones-nocturnas" />
           </div>
 
           <div class="step-actions">
             <button class="btn btn-secondary" id="btn-back-3">Atrás</button>
-            <button class="btn btn-primary" id="btn-step-3" disabled>
+            <button class="btn btn-primary" id="btn-step-3">
               Siguiente
             </button>
           </div>

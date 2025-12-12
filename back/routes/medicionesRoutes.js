@@ -40,7 +40,7 @@ router.post('/actualizar-mediciones', (req, res) => {
   try {
     const { paciente, medicionesDiurnas, medicionesNocturnas } = req.body;
     
-    // Validar que se recibieron los datos necesarios
+    // Validar que se recibió el objeto paciente
     if (!paciente) {
       return res.status(400).json({
         success: false,
@@ -48,25 +48,31 @@ router.post('/actualizar-mediciones', (req, res) => {
       });
     }
     
-    if (medicionesDiurnas === undefined || medicionesNocturnas === undefined) {
-      return res.status(400).json({
-        success: false,
-        message: 'Faltan las mediciones diurnas o nocturnas'
-      });
+    let diurnas = paciente.medicionesDiurnas; // Usar valores existentes por defecto
+    let nocturnas = paciente.medicionesNocturnas; // Usar valores existentes por defecto
+
+    // Si se proporcionan mediciones diurnas y nocturnas, se usan para actualizar
+    if (medicionesDiurnas !== undefined && medicionesNocturnas !== undefined) {
+      const parsedDiurnas = parseInt(medicionesDiurnas);
+      const parsedNocturnas = parseInt(medicionesNocturnas);
+      
+      if (isNaN(parsedDiurnas) || isNaN(parsedNocturnas) || parsedDiurnas < 0 || parsedNocturnas < 0) {
+        return res.status(400).json({
+          success: false,
+          message: 'Las mediciones deben ser números válidos y no negativos'
+        });
+      }
+      diurnas = parsedDiurnas;
+      nocturnas = parsedNocturnas;
+    } else if (medicionesDiurnas !== undefined || medicionesNocturnas !== undefined) {
+        // Si solo se proporciona una de las dos, es un error o una lógica no contemplada
+        return res.status(400).json({
+            success: false,
+            message: 'Si se proporcionan mediciones, deben ser ambas (diurnas y nocturnas).'
+        });
     }
     
-    // Validar que las mediciones sean números
-    const diurnas = parseInt(medicionesDiurnas);
-    const nocturnas = parseInt(medicionesNocturnas);
-    
-    if (isNaN(diurnas) || isNaN(nocturnas)) {
-      return res.status(400).json({
-        success: false,
-        message: 'Las mediciones deben ser números válidos'
-      });
-    }
-    
-    // Actualizar el paciente con las mediciones
+    // Actualizar el paciente con las mediciones (ya sean las nuevas o las originales)
     const pacienteActualizado = {
       ...paciente,
       medicionesDiurnas: diurnas,

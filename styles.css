@@ -485,6 +485,66 @@ body {
   box-shadow: 0 0 0 3px var(--emerald-100);
 }
 
+/* Badge para mediciones automáticas */
+.auto-badge {
+  background: linear-gradient(135deg, var(--emerald-100) 0%, var(--emerald-200) 100%);
+  color: var(--emerald-800);
+  padding: var(--spacing-xs) var(--spacing-md);
+  border-radius: var(--radius-lg);
+  font-size: 0.875rem;
+  font-weight: 600;
+  text-align: center;
+  margin-bottom: var(--spacing-lg);
+  display: inline-block;
+  width: 100%;
+  box-shadow: var(--shadow-sm);
+}
+
+/* Display de mediciones automáticas */
+.measurement-display {
+  background: linear-gradient(135deg, var(--gray-50) 0%, var(--emerald-50) 100%);
+  border: 2px solid var(--emerald-300);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-lg);
+  text-align: center;
+  box-shadow: var(--shadow-sm);
+  transition: var(--transition);
+}
+
+.measurement-display:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.measurement-display.total {
+  background: linear-gradient(135deg, var(--emerald-100) 0%, var(--emerald-200) 100%);
+  border-color: var(--emerald-500);
+  border-width: 3px;
+}
+
+.measurement-value {
+  display: block;
+  font-size: 2.5rem;
+  font-weight: 800;
+  color: var(--emerald-700);
+  line-height: 1;
+  margin-bottom: var(--spacing-xs);
+}
+
+.measurement-display.total .measurement-value {
+  color: var(--emerald-800);
+}
+
+.measurement-label {
+  display: block;
+  font-size: 0.875rem;
+  color: var(--gray-600);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 600;
+}
+
+
 /* =====================================================
    PASO 4: RESUMEN Y GENERACIÓN
    ===================================================== */

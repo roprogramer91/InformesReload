@@ -208,6 +208,9 @@ function construirPaciente(textoPDF) {
       ajustarHoraDuracion
     } = require('./calculations');
     
+    // Importar contador automático de mediciones
+    const { contarMedicionesDiaNoche } = require('./contadorMediciones');
+    
     // Extraer datos básicos
     const nombre = extraerNombre(textoPDF);
     const edad = extraerEdad(textoPDF);
@@ -215,6 +218,9 @@ function construirPaciente(textoPDF) {
     const mediasPA = extraerMediasPA(textoPDF);
     const cargaPA = extraerCargaPA(textoPDF);
     const ritmoCircadiano = extraerRitmoCircadiano(textoPDF);
+    
+    // Contar mediciones automáticamente desde el PDF
+    const medicionesConteo = contarMedicionesDiaNoche(textoPDF);
     
     // Parsear valores numéricos de presión arterial
     const [sysTotal, diaTotal] = mediasPA.todas.split('/').map(Number);
@@ -291,9 +297,10 @@ function construirPaciente(textoPDF) {
       // Riesgo cardiovascular
       riesgoCardiovascular: riesgoCV,
       
-      // Mediciones (a completar manualmente)
-      medicionesDiurnas: null,
-      medicionesNocturnas: null
+      // Mediciones (calculadas automáticamente del PDF)
+      medicionesDiurnas: medicionesConteo.medicionesDiurnas,
+      medicionesNocturnas: medicionesConteo.medicionesNocturnas,
+      totalMediciones: medicionesConteo.totalMediciones
     };
     
     return paciente;
