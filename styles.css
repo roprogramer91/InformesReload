@@ -500,6 +500,18 @@ body {
   box-shadow: var(--shadow-sm);
 }
 
+/* Texto informativo */
+.info-text {
+  background: var(--gray-50);
+  border-left: 4px solid var(--emerald-500);
+  padding: var(--spacing-md);
+  margin-top: var(--spacing-lg);
+  border-radius: var(--radius-md);
+  font-size: 0.875rem;
+  color: var(--gray-700);
+  line-height: 1.5;
+}
+
 /* Display de mediciones automáticas */
 .measurement-display {
   background: linear-gradient(135deg, var(--gray-50) 0%, var(--emerald-50) 100%);

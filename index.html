@@ -114,7 +114,7 @@
         <div class="wizard-step" id="step-3">
           <div class="step-header">
             <h2>Mediciones Calculadas</h2>
-            <p>Las mediciones han sido calculadas automáticamente del PDF</p>
+            <p>Valores calculados automáticamente - puedes ajustarlos si es necesario</p>
           </div>
 
           <div class="patient-info" id="patient-info">
@@ -124,36 +124,34 @@
 
           <div class="measurements-form">
             <div class="auto-badge">
-              ✨ Calculadas automáticamente
+              ✨ Calculadas automáticamente - Puedes editarlas si es necesario
             </div>
             
             <div class="form-group">
-              <label for="mediciones-diurnas-display">Mediciones Diurnas (07:00 - 21:59)</label>
-              <div class="measurement-display" id="mediciones-diurnas-display">
-                <span class="measurement-value">-</span>
-                <span class="measurement-label">mediciones</span>
-              </div>
+              <label for="mediciones-diurnas">Mediciones Diurnas (07:00 - 21:59)</label>
+              <input
+                type="number"
+                id="mediciones-diurnas"
+                class="form-input"
+                min="1"
+                placeholder="Calculado del PDF"
+              />
             </div>
 
             <div class="form-group">
-              <label for="mediciones-nocturnas-display">Mediciones Nocturnas (22:00 - 06:59)</label>
-              <div class="measurement-display" id="mediciones-nocturnas-display">
-                <span class="measurement-value">-</span>
-                <span class="measurement-label">mediciones</span>
-              </div>
+              <label for="mediciones-nocturnas">Mediciones Nocturnas (22:00 - 06:59)</label>
+              <input
+                type="number"
+                id="mediciones-nocturnas"
+                class="form-input"
+                min="1"
+                placeholder="Calculado del PDF"
+              />
             </div>
 
-            <div class="form-group">
-              <label for="total-mediciones-display">Total de Mediciones</label>
-              <div class="measurement-display total" id="total-mediciones-display">
-                <span class="measurement-value">-</span>
-                <span class="measurement-label">mediciones</span>
-              </div>
+            <div class="info-text">
+              💡 Los valores se calcularon automáticamente del PDF. Si ves una diferencia significativa con el reporte ABPM, puedes corregirlos manualmente.
             </div>
-
-            <!-- Inputs ocultos para mantener compatibilidad -->
-            <input type="hidden" id="mediciones-diurnas" />
-            <input type="hidden" id="mediciones-nocturnas" />
           </div>
 
           <div class="step-actions">

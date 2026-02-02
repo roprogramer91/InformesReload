@@ -47,9 +47,6 @@ const patientName = document.getElementById('patient-name');
 const patientAge = document.getElementById('patient-age');
 const medicionesDiurnas = document.getElementById('mediciones-diurnas');
 const medicionesNocturnas = document.getElementById('mediciones-nocturnas');
-const medicionesDiurnasDisplay = document.getElementById('mediciones-diurnas-display');
-const medicionesNocturnasDisplay = document.getElementById('mediciones-nocturnas-display');
-const totalMedicionesDisplay = document.getElementById('total-mediciones-display');
 const btnBack3 = document.getElementById('btn-back-3');
 const btnStep3 = document.getElementById('btn-step-3');
 
@@ -108,15 +105,6 @@ function resetWizard() {
   // Resetear mediciones
   medicionesDiurnas.value = '';
   medicionesNocturnas.value = '';
-  if (medicionesDiurnasDisplay) {
-    medicionesDiurnasDisplay.querySelector('.measurement-value').textContent = '-';
-  }
-  if (medicionesNocturnasDisplay) {
-    medicionesNocturnasDisplay.querySelector('.measurement-value').textContent = '-';
-  }
-  if (totalMedicionesDisplay) {
-    totalMedicionesDisplay.querySelector('.measurement-value').textContent = '-';
-  }
   
   // Resetear botón de generar informe
   btnGenerate.disabled = false;
@@ -262,27 +250,16 @@ btnStep2.addEventListener('click', () => {
     patientName.textContent = appState.pacienteData.nombre;
     patientAge.textContent = appState.pacienteData.edad;
     
-    // Mostrar mediciones automáticas calculadas del PDF
+    // Pre-llenar campos con valores automáticos calculados del PDF
     const diurnas = appState.pacienteData.medicionesDiurnas || 0;
     const nocturnas = appState.pacienteData.medicionesNocturnas || 0;
-    const total = appState.pacienteData.totalMediciones || (diurnas + nocturnas);
     
-    // Actualizar displays visuales
-    if (medicionesDiurnasDisplay) {
-      medicionesDiurnasDisplay.querySelector('.measurement-value').textContent = diurnas;
-    }
-    if (medicionesNocturnasDisplay) {
-      medicionesNocturnasDisplay.querySelector('.measurement-value').textContent = nocturnas;
-    }
-    if (totalMedicionesDisplay) {
-      totalMedicionesDisplay.querySelector('.measurement-value').textContent = total;
-    }
-    
-    // Actualizar inputs ocultos (para compatibilidad)
+    // Llenar los inputs editables con valores automáticos
     medicionesDiurnas.value = diurnas;
     medicionesNocturnas.value = nocturnas;
     
-    console.log('✅ Mediciones automáticas mostradas:', { diurnas, nocturnas, total });
+    console.log('✅ Mediciones automáticas pre-cargadas:', { diurnas, nocturnas });
+    console.log('   (Los campos son editables si necesitas ajustar los valores)');
     
     goToStep(3);
   }
@@ -303,12 +280,20 @@ btnBack3.addEventListener('click', () => {
 
 btnStep3.addEventListener('click', () => {
   if (appState.pacienteData) {
+    // Leer valores actuales (pueden ser automáticos o editados manualmente)
+    const diurnas = parseInt(medicionesDiurnas.value) || 0;
+    const nocturnas = parseInt(medicionesNocturnas.value) || 0;
+    
+    // Actualizar en el estado
+    appState.pacienteData.medicionesDiurnas = diurnas;
+    appState.pacienteData.medicionesNocturnas = nocturnas;
+    
     // Actualizar resumen
     summaryName.textContent = appState.pacienteData.nombre;
     summaryAge.textContent = `${appState.pacienteData.edad} años`;
     summaryInstitution.textContent = appState.institucionNombre;
-    summaryDiurnas.textContent = appState.pacienteData.medicionesDiurnas;
-    summaryNocturnas.textContent = appState.pacienteData.medicionesNocturnas;
+    summaryDiurnas.textContent = diurnas;
+    summaryNocturnas.textContent = nocturnas;
     
     goToStep(4);
   }

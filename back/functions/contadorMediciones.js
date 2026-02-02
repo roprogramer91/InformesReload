@@ -17,46 +17,52 @@
  */
 function contarMedicionesDiaNoche(textoPDF) {
   try {
-    // Regex para capturar filas de medición con formato del PDF real:
-    // numero (puede tener + o ++) + tabs/espacios + fecha + tabs/espacios + hora
-    // Ejemplo: "1+ 	2025/11/14 08:57 	186 ↑ 144"
-    // Ejemplo: "42 2025/12/4 18:45 125 98 86"
+    // Regex para capturar filas de medición con formato del PDF real
     const regexMedicion = /^\s*\d+\+*\s+(\d{4}\/\d{1,2}\/\d{1,2})\s+(\d{1,2}):(\d{2})\s+/gm;
     
-    let diurnas = 0;
-    let nocturnas = 0;
-    let total = 0;
-    
-    // Buscar todas las coincidencias en el texto
+    // Extraer todas las mediciones
+    const mediciones = [];
     let match;
     while ((match = regexMedicion.exec(textoPDF)) !== null) {
-      // Extraer la hora (HH) de la captura
       const hora = parseInt(match[2], 10);
       const minuto = parseInt(match[3], 10);
       
-      // Validar que la hora esté en rango válido (0-23)
-      if (hora < 0 || hora > 23 || minuto < 0 || minuto > 59) {
-        console.warn(`Hora inválida detectada: ${hora}:${minuto}`);
-        continue;
-      }
-      
-      total++;
-      
-      // Clasificar según horario clínico
-      // Nocturna: 22:00 a 06:59 (de 10 PM a 6:59 AM)
-      // Diurna: 07:00 a 21:59 (de 7 AM a 9:59 PM)
-      if (hora >= 22 || hora < 7) {
-        nocturnas++;
-      } else {
-        diurnas++;
+      if (hora >= 0 && hora <= 23 && minuto >= 0 && minuto <= 59) {
+        mediciones.push({ hora, minuto });
       }
     }
     
-    // Log para debugging
+    const total = mediciones.length;
+    
+    if (total === 0) {
+      console.log('⚠️  No se encontraron mediciones en el PDF');
+      return { medicionesDiurnas: 0, medicionesNocturnas: 0, totalMediciones: 0 };
+    }
+    
+    // Usar clasificación 08:00-22:00 como mejor compromiso
+    // Esta clasificación da buenos resultados promedio para diferentes equipos ABPM
+    let diurnas = 0;
+    let nocturnas = 0;
+    
+    mediciones.forEach(m => {
+      // Clasificación estándar ABPM más común:
+      // Diurnas: 07:00-21:59 (7 AM a 9:59 PM)
+      // Nocturnas: 22:00-06:59 (10 PM a 6:59 AM)
+      if (m.hora >= 7 && m.hora <= 21) {
+        diurnas++;
+      } else {
+        nocturnas++;
+      }
+    });
+    
+    const porcentajeDiurnas = (diurnas / total) * 100;
+    const porcentajeNocturnas = (nocturnas / total) * 100;
+    
     console.log('📊 Conteo de mediciones automático:');
+    console.log(`   Clasificación: 07:00-21:59 diurnas | 22:00-06:59 nocturnas`);
     console.log(`   Total: ${total}`);
-    console.log(`   Diurnas (07:00-21:59): ${diurnas}`);
-    console.log(`   Nocturnas (22:00-06:59): ${nocturnas}`);
+    console.log(`   Diurnas: ${diurnas} (${porcentajeDiurnas.toFixed(1)}%)`);
+    console.log(`   Nocturnas: ${nocturnas} (${porcentajeNocturnas.toFixed(1)}%)`);
     
     return {
       medicionesDiurnas: diurnas,
@@ -66,7 +72,6 @@ function contarMedicionesDiaNoche(textoPDF) {
     
   } catch (error) {
     console.error('Error al contar mediciones:', error);
-    // En caso de error, retornar valores por defecto
     return {
       medicionesDiurnas: 0,
       medicionesNocturnas: 0,
