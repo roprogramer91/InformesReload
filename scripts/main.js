@@ -327,7 +327,7 @@ btnGenerate.addEventListener('click', async () => {
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `${appState.pacienteData.nombre.replace(/\s+/g, '_')}_MAPA.docx`;
+      a.download = `${appState.pacienteData.nombre}.pdf`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);

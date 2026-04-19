@@ -6,6 +6,7 @@ const express = require('express');
 const router = express.Router();
 const { generarInforme } = require('../functions/crearInforme');
 const { validarEstudioCompleto } = require('../config/config');
+const { convertirDocxAPdf } = require('../functions/convertirPDF');
 
 /**
  * POST /api/generar-informe
@@ -63,21 +64,22 @@ router.post('/generar-informe', async (req, res) => {
       });
     }
 
-    // Generar el informe
-    const buffer = generarInforme(paciente, institucionId);
-    
-    // Preparar nombre del archivo
-    const nombreArchivo = `${paciente.nombre.replace(/\s+/g, '_')}_MAPA.docx`;
-    
+    // Generar el DOCX y convertir a PDF
+    const docxBuffer = generarInforme(paciente, institucionId);
+    const pdfBuffer = convertirDocxAPdf(docxBuffer);
+
+    // Nombre del archivo: solo el nombre del paciente
+    const nombreArchivo = `${paciente.nombre}.pdf`;
+
     // Configurar headers para la descarga
-    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+    res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', `attachment; filename="${nombreArchivo}"`);
-    res.setHeader('Content-Length', buffer.length);
-    
-    console.log('✅ Informe generado exitosamente:', nombreArchivo);
-    
+    res.setHeader('Content-Length', pdfBuffer.length);
+
+    console.log('✅ Informe PDF generado exitosamente:', nombreArchivo);
+
     // Enviar el archivo
-    res.send(buffer);
+    res.send(pdfBuffer);
     
   } catch (error) {
     console.error('❌ Error al generar informe:', error);
