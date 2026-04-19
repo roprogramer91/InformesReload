@@ -47,6 +47,16 @@ const INSTITUCIONES = {
     plantillaFaltaInfo: 'PlantillaFaltaInfo-VN.docx',
     logo: 'vital_norte.png',
     descripcion: 'Instituto de salud integral'
+  },
+
+  darmed: {
+    id: 'darmed',
+    nombre: 'Darmed',
+    nombreCompleto: 'Darmed',
+    plantilla: 'PlantillaC.docx',
+    plantillaFaltaInfo: 'PlantillaC.docx',
+    logo: 'darmed.png',
+    descripcion: 'Darmed'
   }
 };
 
