@@ -5,6 +5,7 @@
 const express = require('express');
 const router = express.Router();
 const { generarInforme } = require('../functions/crearInforme');
+const { validarEstudioCompleto } = require('../config/config');
 
 /**
  * POST /api/generar-informe
@@ -45,7 +46,23 @@ router.post('/generar-informe', async (req, res) => {
     
     console.log('📄 Generando informe para:', paciente.nombre);
     console.log('🏥 Institución:', institucionId);
-    
+
+    // Validar estudio antes de generar
+    const validacion = validarEstudioCompleto(
+      paciente.duracionHoras || 0,
+      paciente.medicionesDiurnas || 0,
+      paciente.medicionesNocturnas || 0
+    );
+
+    if (!validacion.valido) {
+      console.log('⚠️ Estudio insuficiente:', validacion.motivos);
+      return res.status(422).json({
+        insuficiente: true,
+        nombre: paciente.nombre,
+        fecha: paciente.fechaFormateada
+      });
+    }
+
     // Generar el informe
     const buffer = generarInforme(paciente, institucionId);
     

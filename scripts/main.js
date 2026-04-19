@@ -7,7 +7,9 @@
 // CONFIGURACIÓN
 // =====================================================
 
-const API_BASE_URL = 'https://informesreload-production.up.railway.app';
+const API_BASE_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+  ? 'http://localhost:3000'
+  : 'https://informesreload-production.up.railway.app';
 
 // Estado global de la aplicación
 const appState = {
@@ -330,12 +332,25 @@ btnGenerate.addEventListener('click', async () => {
       a.click();
       document.body.removeChild(a);
       window.URL.revokeObjectURL(url);
-      
+
       loadingGenerate.style.display = 'none';
       btnGenerate.textContent = '✓ Informe Descargado';
       btnGenerate.style.background = 'var(--emerald-600)';
-      
+
       console.log('✅ Informe generado y descargado');
+    } else if (response.status === 422) {
+      const data = await response.json();
+      if (data.insuficiente) {
+        loadingGenerate.style.display = 'none';
+
+        const mensaje = `Paciente: ${data.nombre}\nFecha del estudio: ${data.fecha}\n⚠️ Reclamar: el MAPA no cuenta con las horas/mediciones suficientes para realizar el informe.`;
+        const urlWhatsApp = `https://wa.me/5491131080805?text=${encodeURIComponent(mensaje)}`;
+        window.open(urlWhatsApp, '_blank');
+
+        btnGenerate.textContent = '✓ WhatsApp Abierto';
+        btnGenerate.style.background = '#25D366';
+        console.log('📲 Estudio insuficiente - WhatsApp abierto');
+      }
     } else {
       const error = await response.json();
       throw new Error(error.message || 'Error al generar el informe');
