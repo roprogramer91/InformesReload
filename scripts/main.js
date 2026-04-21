@@ -327,7 +327,9 @@ btnGenerate.addEventListener('click', async () => {
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `${appState.pacienteData.nombre}.pdf`;
+      const contentDisp = response.headers.get('Content-Disposition') || '';
+      const matchName = contentDisp.match(/filename="(.+?)"/);
+      a.download = matchName ? matchName[1] : `${appState.pacienteData.nombre}.pdf`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
@@ -368,6 +370,247 @@ btnRestart.addEventListener('click', () => {
     resetWizard();
   }
 });
+
+// =====================================================
+// MODE TABS
+// =====================================================
+
+const btnModePdf = document.getElementById('btn-mode-pdf');
+const btnModeAwp = document.getElementById('btn-mode-awp');
+const pdfProgress = document.getElementById('pdf-progress');
+const pdfMain = document.querySelector('.main-content');
+const awpSection = document.getElementById('awp-section');
+
+btnModePdf.addEventListener('click', () => {
+  btnModePdf.classList.add('active');
+  btnModeAwp.classList.remove('active');
+  pdfProgress.classList.remove('hidden');
+  pdfMain.classList.remove('hidden');
+  awpSection.classList.add('hidden');
+});
+
+btnModeAwp.addEventListener('click', () => {
+  btnModeAwp.classList.add('active');
+  btnModePdf.classList.remove('active');
+  pdfProgress.classList.add('hidden');
+  pdfMain.classList.add('hidden');
+  awpSection.classList.remove('hidden');
+});
+
+// =====================================================
+// MODO AWP — LOTE
+// =====================================================
+
+const awpState = {
+  institucionId: null,
+  institucionNombre: null
+};
+
+const awpInstitutionCards = document.querySelectorAll('#awp-institutions .institution-card');
+const awpUploadZone = document.getElementById('awp-upload-zone');
+const awpDropArea = document.getElementById('awp-drop-area');
+const awpInput = document.getElementById('awp-input');
+const awpFileList = document.getElementById('awp-file-list');
+
+awpInstitutionCards.forEach(card => {
+  card.addEventListener('click', () => {
+    awpInstitutionCards.forEach(c => c.classList.remove('selected'));
+    card.classList.add('selected');
+    awpState.institucionId = card.dataset.id;
+    awpState.institucionNombre = card.querySelector('h3').textContent;
+    awpUploadZone.classList.remove('hidden');
+  });
+});
+
+awpDropArea.addEventListener('click', () => awpInput.click());
+
+awpDropArea.addEventListener('dragover', (e) => {
+  e.preventDefault();
+  awpDropArea.classList.add('drag-over');
+});
+
+awpDropArea.addEventListener('dragleave', () => {
+  awpDropArea.classList.remove('drag-over');
+});
+
+awpDropArea.addEventListener('drop', (e) => {
+  e.preventDefault();
+  awpDropArea.classList.remove('drag-over');
+  const files = Array.from(e.dataTransfer.files).filter(f => f.name.toLowerCase().endsWith('.awp'));
+  if (files.length === 0) { alert('Solo se aceptan archivos .awp'); return; }
+  procesarTanda(files);
+});
+
+awpInput.addEventListener('change', (e) => {
+  const files = Array.from(e.target.files);
+  if (files.length > 0) procesarTanda(files);
+  awpInput.value = '';
+});
+
+function procesarTanda(files) {
+  // Limpiar lista anterior — cada tanda es independiente
+  awpFileList.innerHTML = '';
+
+  // Crear filas de progreso para todos los archivos
+  const items = files.map(file => {
+    const itemId = `awp-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    const item = document.createElement('div');
+    item.className = 'awp-file-item';
+    item.id = itemId;
+    item.innerHTML = `
+      <div class="awp-file-info">
+        <span class="awp-file-status">⏳</span>
+        <div class="awp-file-details">
+          <div class="awp-patient-name">Procesando...</div>
+          <div class="awp-file-meta">${file.name}</div>
+        </div>
+      </div>
+    `;
+    awpFileList.appendChild(item);
+    return { file, itemId };
+  });
+
+  // Procesar cada archivo (las descargas se disparan automáticamente al completar)
+  items.forEach(({ file, itemId }) => procesarAwp(file, itemId));
+}
+
+async function procesarAwp(file, itemId) {
+  const item = document.getElementById(itemId);
+  const statusEl = item.querySelector('.awp-file-status');
+  const nameEl = item.querySelector('.awp-patient-name');
+  const metaEl = item.querySelector('.awp-file-meta');
+
+  try {
+    const formData = new FormData();
+    formData.append('awpFile', file);
+    formData.append('institucionId', awpState.institucionId);
+
+    const response = await fetch(`${API_BASE_URL}/api/procesar-awp`, {
+      method: 'POST',
+      body: formData
+    });
+
+    if (response.ok) {
+      const blob = await response.blob();
+      const disposition = response.headers.get('Content-Disposition') || '';
+      const match = disposition.match(/filename="(.+?)"/);
+      const nombreArchivo = match ? match[1] : file.name.replace('.awp', '.pdf');
+      const pacienteNombre = nombreArchivo.replace(/\.(pdf|docx)$/, '');
+
+      // Auto-descarga inmediata
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = nombreArchivo;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+
+      statusEl.textContent = '✅';
+      nameEl.textContent = pacienteNombre;
+      metaEl.textContent = `${awpState.institucionNombre} · descargado`;
+      item.classList.add('ok');
+      registrarEnHistorial(pacienteNombre, awpState.institucionNombre, 'ok');
+
+    } else if (response.status === 422) {
+      const data = await response.json();
+
+      statusEl.textContent = '⚠️';
+      nameEl.textContent = data.nombre || file.name;
+      metaEl.textContent = `Fecha: ${data.fecha || '-'} · estudio insuficiente`;
+      item.classList.add('warn');
+      registrarEnHistorial(data.nombre || file.name, awpState.institucionNombre, 'warn');
+
+      const mensaje = `Paciente: ${data.nombre}\nFecha del estudio: ${data.fecha}\n⚠️ Reclamar: el MAPA no cuenta con las horas/mediciones suficientes para realizar el informe.`;
+      const urlWhatsApp = `https://wa.me/5491131080805?text=${encodeURIComponent(mensaje)}`;
+
+      const btn = document.createElement('button');
+      btn.className = 'btn-awp-whatsapp';
+      btn.textContent = 'WhatsApp';
+      btn.addEventListener('click', () => window.open(urlWhatsApp, '_blank'));
+      item.appendChild(btn);
+
+    } else {
+      throw new Error(`Error ${response.status}`);
+    }
+  } catch (error) {
+    statusEl.textContent = '❌';
+    nameEl.textContent = file.name;
+    metaEl.textContent = error.message;
+    item.classList.add('err');
+    registrarEnHistorial(file.name, awpState.institucionNombre || '-', 'err');
+  }
+}
+
+// =====================================================
+// HISTORIAL (localStorage)
+// =====================================================
+
+const HISTORIAL_KEY = 'informatron_historial';
+const historialVacio = document.getElementById('historial-vacio');
+const historialTabla = document.getElementById('historial-tabla');
+const historialTbody = document.getElementById('historial-tbody');
+const btnLimpiarHistorial = document.getElementById('btn-limpiar-historial');
+
+function cargarHistorial() {
+  try { return JSON.parse(localStorage.getItem(HISTORIAL_KEY)) || []; }
+  catch { return []; }
+}
+
+function guardarHistorial(historial) {
+  localStorage.setItem(HISTORIAL_KEY, JSON.stringify(historial));
+}
+
+function agregarAlHistorial(entry) {
+  const historial = cargarHistorial();
+  historial.unshift(entry); // más reciente primero
+  guardarHistorial(historial);
+  renderHistorial();
+}
+
+function renderHistorial() {
+  const historial = cargarHistorial();
+  if (historial.length === 0) {
+    historialVacio.style.display = 'block';
+    historialTabla.style.display = 'none';
+    return;
+  }
+  historialVacio.style.display = 'none';
+  historialTabla.style.display = 'table';
+
+  historialTbody.innerHTML = historial.map(e => {
+    const estadoLabel = e.estado === 'ok' ? '✅ Descargado' : e.estado === 'warn' ? '⚠️ Insuficiente' : '❌ Error';
+    return `<tr>
+      <td>${e.fecha}</td>
+      <td>${e.hora}</td>
+      <td><strong>${e.nombre}</strong></td>
+      <td>${e.institucion}</td>
+      <td><span class="historial-estado ${e.estado}">${estadoLabel}</span></td>
+    </tr>`;
+  }).join('');
+}
+
+btnLimpiarHistorial.addEventListener('click', () => {
+  if (confirm('¿Limpiar todo el historial?')) {
+    localStorage.removeItem(HISTORIAL_KEY);
+    renderHistorial();
+  }
+});
+
+function registrarEnHistorial(nombre, institucion, estado) {
+  const ahora = new Date();
+  agregarAlHistorial({
+    fecha: ahora.toLocaleDateString('es-AR'),
+    hora:  ahora.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' }),
+    nombre,
+    institucion,
+    estado
+  });
+}
+
+// Cargar historial al iniciar
+renderHistorial();
 
 // =====================================================
 // INICIALIZACIÓN

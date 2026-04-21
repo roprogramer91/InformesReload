@@ -15,8 +15,16 @@
       </div>
     </header>
 
-    <!-- Progress Indicator -->
-    <div class="progress-container">
+    <!-- Mode Tabs -->
+    <div class="mode-tabs-container">
+      <div class="mode-tabs">
+        <button class="mode-tab active" id="btn-mode-pdf">📄 Modo PDF</button>
+        <button class="mode-tab" id="btn-mode-awp">📁 Modo AWP — Lote</button>
+      </div>
+    </div>
+
+    <!-- Progress Indicator (solo modo PDF) -->
+    <div class="progress-container" id="pdf-progress">
       <div class="container">
         <div class="progress-steps">
           <div class="progress-step active" data-step="1">
@@ -221,6 +229,66 @@
         </div>
       </div>
     </main>
+
+    <!-- AWP Section -->
+    <div id="awp-section" class="awp-section hidden">
+      <div class="container">
+        <div class="step-header">
+          <h2>Seleccione la Institución</h2>
+          <p>Luego subí los archivos AWP del día</p>
+        </div>
+
+        <div class="institutions-grid" id="awp-institutions">
+          <div class="institution-card" data-id="consultoriosMedicos">
+            <div class="institution-icon">🏥</div>
+            <h3>Consultorios Médicos</h3>
+            <p>Centro de Diagnóstico</p>
+          </div>
+          <div class="institution-card" data-id="vitalNorte">
+            <div class="institution-icon">❤️</div>
+            <h3>Vital Norte</h3>
+            <p>Instituto de Salud</p>
+          </div>
+          <div class="institution-card" data-id="darmed">
+            <div class="institution-icon">🏨</div>
+            <h3>Darmed</h3>
+            <p>Centro Médico</p>
+          </div>
+        </div>
+
+        <div class="awp-upload-zone hidden" id="awp-upload-zone">
+          <div class="awp-drop-area" id="awp-drop-area">
+            <div class="upload-icon">📁</div>
+            <p class="upload-text">Arrastrá los archivos AWP aquí o hacé clic para seleccionar</p>
+            <p class="upload-subtext">Podés subir varios archivos a la vez (.awp)</p>
+            <input type="file" id="awp-input" accept=".awp" multiple hidden />
+          </div>
+          <div id="awp-file-list" class="awp-file-list"></div>
+        </div>
+
+        <!-- Historial -->
+        <div class="historial-section">
+          <div class="historial-header">
+            <h3>Historial de procesamiento</h3>
+            <button class="btn-limpiar-historial" id="btn-limpiar-historial">Limpiar historial</button>
+          </div>
+          <div id="historial-vacio" class="historial-vacio">No hay registros aún.</div>
+          <table class="historial-tabla" id="historial-tabla" style="display:none">
+            <thead>
+              <tr>
+                <th>Fecha</th>
+                <th>Hora</th>
+                <th>Paciente</th>
+                <th>Institución</th>
+                <th>Estado</th>
+              </tr>
+            </thead>
+            <tbody id="historial-tbody"></tbody>
+          </table>
+        </div>
+
+      </div>
+    </div>
 
     <!-- Footer -->
     <footer class="footer">

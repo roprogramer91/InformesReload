@@ -730,3 +730,254 @@ body {
     width: 100%;
   }
 }
+
+/* =====================================================
+   MODE TABS — estilo pestaña de carpeta
+   ===================================================== */
+
+.mode-tabs-container {
+  background: var(--gray-100);
+  border-bottom: 3px solid var(--primary-600);
+  padding-top: 1.25rem;
+}
+
+.mode-tabs {
+  display: flex;
+  align-items: flex-end;
+  gap: 0.25rem;
+  padding: 0 1.5rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.mode-tab {
+  padding: 0.6rem 2rem;
+  border: 1px solid var(--gray-300);
+  border-bottom: none;
+  border-radius: 6px 6px 0 0;
+  background: var(--gray-200);
+  color: var(--gray-500);
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  position: relative;
+  bottom: -1px;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.mode-tab:hover:not(.active) {
+  background: var(--gray-300);
+  color: var(--gray-700);
+}
+
+.mode-tab.active {
+  background: var(--white);
+  color: var(--primary-700);
+  font-weight: 700;
+  border-color: var(--gray-300);
+  border-bottom: 3px solid var(--white);
+  bottom: -3px;
+  z-index: 1;
+}
+
+/* =====================================================
+   AWP SECTION
+   ===================================================== */
+
+.hidden {
+  display: none !important;
+}
+
+.awp-section {
+  padding: 2rem 0;
+}
+
+.awp-upload-zone {
+  margin-top: 2rem;
+}
+
+.awp-drop-area {
+  border: 2px dashed var(--gray-300);
+  border-radius: 1rem;
+  padding: 2.5rem;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  background: var(--gray-50);
+}
+
+.awp-drop-area:hover,
+.awp-drop-area.drag-over {
+  border-color: var(--primary-500);
+  background: var(--primary-50);
+}
+
+/* =====================================================
+   AWP FILE LIST
+   ===================================================== */
+
+.awp-file-list {
+  margin-top: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.awp-file-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.85rem 1.25rem;
+  background: var(--white);
+  border: 1px solid var(--gray-200);
+  border-radius: 0.75rem;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+}
+
+.awp-file-item.ok {
+  border-left: 4px solid var(--emerald-500);
+}
+
+.awp-file-item.warn {
+  border-left: 4px solid #f59e0b;
+}
+
+.awp-file-item.err {
+  border-left: 4px solid #dc2626;
+}
+
+.awp-file-info {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex: 1;
+  min-width: 0;
+}
+
+.awp-file-status {
+  font-size: 1.2rem;
+  flex-shrink: 0;
+}
+
+.awp-file-details {
+  min-width: 0;
+}
+
+.awp-patient-name {
+  font-weight: 600;
+  color: var(--gray-800);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.awp-file-meta {
+  font-size: 0.78rem;
+  color: var(--gray-500);
+  margin-top: 0.1rem;
+}
+
+.awp-error-msg {
+  font-size: 0.78rem;
+  color: #dc2626;
+  margin-top: 0.1rem;
+}
+
+.btn-awp-whatsapp {
+  padding: 0.4rem 0.9rem;
+  background: #25D366;
+  color: var(--white);
+  border: none;
+  border-radius: 0.5rem;
+  font-size: 0.82rem;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* =====================================================
+   HISTORIAL
+   ===================================================== */
+
+.historial-section {
+  margin-top: 3rem;
+  border-top: 1px solid var(--gray-200);
+  padding-top: 1.5rem;
+}
+
+.historial-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+}
+
+.historial-header h3 {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--gray-700);
+}
+
+.btn-limpiar-historial {
+  padding: 0.35rem 0.9rem;
+  background: transparent;
+  border: 1px solid var(--gray-300);
+  border-radius: 0.4rem;
+  color: var(--gray-500);
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.btn-limpiar-historial:hover {
+  border-color: #dc2626;
+  color: #dc2626;
+}
+
+.historial-vacio {
+  color: var(--gray-400);
+  font-size: 0.875rem;
+  padding: 1rem 0;
+}
+
+.historial-tabla {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+
+.historial-tabla thead th {
+  text-align: left;
+  padding: 0.5rem 0.75rem;
+  background: var(--gray-100);
+  color: var(--gray-600);
+  font-weight: 600;
+  border-bottom: 2px solid var(--gray-200);
+}
+
+.historial-tabla tbody tr {
+  border-bottom: 1px solid var(--gray-100);
+  transition: background 0.1s;
+}
+
+.historial-tabla tbody tr:hover {
+  background: var(--gray-50);
+}
+
+.historial-tabla tbody td {
+  padding: 0.55rem 0.75rem;
+  color: var(--gray-700);
+  vertical-align: middle;
+}
+
+.historial-estado {
+  font-weight: 600;
+  font-size: 0.8rem;
+}
+
+.historial-estado.ok    { color: var(--emerald-600); }
+.historial-estado.warn  { color: #d97706; }
+.historial-estado.err   { color: #dc2626; }

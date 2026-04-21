@@ -64,22 +64,19 @@ router.post('/generar-informe', async (req, res) => {
       });
     }
 
-    // Generar el DOCX y convertir a PDF
+    // Generar el DOCX y convertir a PDF (o DOCX si LibreOffice no disponible)
     const docxBuffer = generarInforme(paciente, institucionId);
-    const pdfBuffer = convertirDocxAPdf(docxBuffer);
+    const { buffer, tipo } = convertirDocxAPdf(docxBuffer);
 
-    // Nombre del archivo: solo el nombre del paciente
-    const nombreArchivo = `${paciente.nombre}.pdf`;
-
-    // Configurar headers para la descarga
-    res.setHeader('Content-Type', 'application/pdf');
+    const nombreArchivo = `${paciente.nombre}.${tipo}`;
+    const contentType = tipo === 'pdf' ? 'application/pdf' : 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+    res.setHeader('Content-Type', contentType);
     res.setHeader('Content-Disposition', `attachment; filename="${nombreArchivo}"`);
-    res.setHeader('Content-Length', pdfBuffer.length);
+    res.setHeader('Content-Length', buffer.length);
 
-    console.log('✅ Informe PDF generado exitosamente:', nombreArchivo);
+    console.log('✅ Informe generado exitosamente:', nombreArchivo);
 
-    // Enviar el archivo
-    res.send(pdfBuffer);
+    res.send(buffer);
     
   } catch (error) {
     console.error('❌ Error al generar informe:', error);

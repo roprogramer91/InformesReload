@@ -29,11 +29,13 @@ app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 const pdfRoutes = require('./routes/pdfRoutes');
 const medicionesRoutes = require('./routes/medicionesRoutes');
 const informeRoutes = require('./routes/informeRoutes');
+const awpRoutes = require('./routes/awpRoutes');
 
 // Usar rutas
 app.use('/api', pdfRoutes);
 app.use('/api', medicionesRoutes);
 app.use('/api', informeRoutes);
+app.use('/api', awpRoutes);
 
 // Ruta raíz
 app.get('/', (req, res) => {
