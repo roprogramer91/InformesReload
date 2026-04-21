@@ -3,16 +3,8 @@ const fs = require('fs');
 const path = require('path');
 const os = require('os');
 
-function libreOfficeDisponible() {
-  try {
-    execSync('libreoffice --version', { timeout: 5000, stdio: 'ignore' });
-    return true;
-  } catch {
-    return false;
-  }
-}
-
-const _libreDisponible = libreOfficeDisponible();
+// Detectar LibreOffice en base al sistema operativo — evita execSync al arranque
+const _libreDisponible = process.platform !== 'win32';
 console.log(_libreDisponible ? '✅ LibreOffice disponible — salida en PDF' : '⚠️  LibreOffice no disponible — salida en DOCX (solo local)');
 
 /**

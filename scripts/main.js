@@ -7,9 +7,14 @@
 // CONFIGURACIÓN
 // =====================================================
 
-const API_BASE_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-  ? 'http://localhost:3000'
-  : 'https://informesreload-production.up.railway.app';
+const _isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+const _isDev = new URLSearchParams(window.location.search).has('dev');
+
+const API_BASE_URL = !_isLocal
+  ? 'https://informesreload-production.up.railway.app'
+  : _isDev
+    ? 'https://informesreload-dev-entorno.up.railway.app'
+    : 'http://localhost:3000';
 
 // Estado global de la aplicación
 const appState = {
