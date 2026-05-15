@@ -20,6 +20,7 @@
       <div class="mode-tabs">
         <button class="mode-tab active" id="btn-mode-pdf">📄 Modo PDF</button>
         <button class="mode-tab" id="btn-mode-awp">📁 Modo AWP — Lote</button>
+        <button class="mode-tab" id="btn-mode-unir">📎 Unir PDFs</button>
       </div>
     </div>
 
@@ -287,6 +288,46 @@
           </table>
         </div>
 
+      </div>
+    </div>
+
+    <!-- Unir PDFs Section -->
+    <div id="unir-section" class="unir-section hidden">
+      <div class="container">
+        <div class="step-header">
+          <h2>Unir PDFs</h2>
+          <p>Subí los dos archivos PDF para combinarlos en uno solo</p>
+        </div>
+
+        <div class="unir-grid">
+          <div class="unir-slot" id="unir-slot-1">
+            <div class="unir-slot-label">PDF 1 — Informe del programa (con -P)</div>
+            <div class="unir-drop" id="unir-drop-1">
+              <div class="upload-icon">📄</div>
+              <p class="upload-text">Arrastrá o hacé clic</p>
+              <input type="file" id="unir-input-1" accept=".pdf" hidden />
+            </div>
+            <div class="unir-file-name" id="unir-name-1"></div>
+          </div>
+
+          <div class="unir-slot" id="unir-slot-2">
+            <div class="unir-slot-label">PDF 2 — Informe médico (sin -P)</div>
+            <div class="unir-drop" id="unir-drop-2">
+              <div class="upload-icon">📄</div>
+              <p class="upload-text">Arrastrá o hacé clic</p>
+              <input type="file" id="unir-input-2" accept=".pdf" hidden />
+            </div>
+            <div class="unir-file-name" id="unir-name-2"></div>
+          </div>
+        </div>
+
+        <div class="unir-actions">
+          <div class="loading-spinner hidden" id="unir-loading">
+            <div class="spinner"></div>
+            <p>Combinando PDFs...</p>
+          </div>
+          <button class="btn btn-success" id="btn-unir" disabled>Unir y Descargar PDF</button>
+        </div>
       </div>
     </div>
 

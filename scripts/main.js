@@ -381,6 +381,8 @@ btnRestart.addEventListener('click', () => {
 // =====================================================
 // MODE TABS
 // =====================================================
+const btnModeUnir = document.getElementById('btn-mode-unir');
+const unirSection = document.getElementById('unir-section');
 
 const btnModePdf = document.getElementById('btn-mode-pdf');
 const btnModeAwp = document.getElementById('btn-mode-awp');
@@ -388,20 +390,31 @@ const pdfProgress = document.getElementById('pdf-progress');
 const pdfMain = document.querySelector('.main-content');
 const awpSection = document.getElementById('awp-section');
 
-btnModePdf.addEventListener('click', () => {
-  btnModePdf.classList.add('active');
+function setActiveTab(tab) {
+  btnModePdf.classList.remove('active');
   btnModeAwp.classList.remove('active');
+  btnModeUnir.classList.remove('active');
+  pdfProgress.classList.add('hidden');
+  pdfMain.classList.add('hidden');
+  awpSection.classList.add('hidden');
+  unirSection.classList.add('hidden');
+  tab.classList.add('active');
+}
+
+btnModePdf.addEventListener('click', () => {
+  setActiveTab(btnModePdf);
   pdfProgress.classList.remove('hidden');
   pdfMain.classList.remove('hidden');
-  awpSection.classList.add('hidden');
 });
 
 btnModeAwp.addEventListener('click', () => {
-  btnModeAwp.classList.add('active');
-  btnModePdf.classList.remove('active');
-  pdfProgress.classList.add('hidden');
-  pdfMain.classList.add('hidden');
+  setActiveTab(btnModeAwp);
   awpSection.classList.remove('hidden');
+});
+
+btnModeUnir.addEventListener('click', () => {
+  setActiveTab(btnModeUnir);
+  unirSection.classList.remove('hidden');
 });
 
 // =====================================================
@@ -550,6 +563,91 @@ async function procesarAwp(file, itemId) {
     registrarEnHistorial(file.name, awpState.institucionNombre || '-', 'err');
   }
 }
+
+// =====================================================
+// UNIR PDFs
+// =====================================================
+
+const unirFiles = { pdf1: null, pdf2: null };
+const btnUnir = document.getElementById('btn-unir');
+const unirLoading = document.getElementById('unir-loading');
+
+function setupUnirSlot(slotNum) {
+  const drop = document.getElementById(`unir-drop-${slotNum}`);
+  const input = document.getElementById(`unir-input-${slotNum}`);
+  const nameEl = document.getElementById(`unir-name-${slotNum}`);
+  const key = `pdf${slotNum}`;
+
+  drop.addEventListener('click', () => input.click());
+
+  drop.addEventListener('dragover', (e) => { e.preventDefault(); drop.classList.add('drag-over'); });
+  drop.addEventListener('dragleave', () => drop.classList.remove('drag-over'));
+  drop.addEventListener('drop', (e) => {
+    e.preventDefault();
+    drop.classList.remove('drag-over');
+    const file = e.dataTransfer.files[0];
+    if (file?.type === 'application/pdf') setUnirFile(key, file, drop, nameEl);
+    else alert('Solo se aceptan archivos PDF');
+  });
+
+  input.addEventListener('change', (e) => {
+    if (e.target.files[0]) setUnirFile(key, e.target.files[0], drop, nameEl);
+    input.value = '';
+  });
+}
+
+function setUnirFile(key, file, drop, nameEl) {
+  unirFiles[key] = file;
+  drop.classList.add('loaded');
+  nameEl.textContent = file.name;
+  btnUnir.disabled = !(unirFiles.pdf1 && unirFiles.pdf2);
+}
+
+setupUnirSlot(1);
+setupUnirSlot(2);
+
+btnUnir.addEventListener('click', async () => {
+  try {
+    btnUnir.disabled = true;
+    unirLoading.classList.remove('hidden');
+
+    const formData = new FormData();
+    formData.append('pdf1', unirFiles.pdf1);
+    formData.append('pdf2', unirFiles.pdf2);
+
+    const response = await fetch(`${API_BASE_URL}/api/unir-pdfs`, {
+      method: 'POST',
+      body: formData
+    });
+
+    if (response.ok) {
+      const blob = await response.blob();
+      const disposition = response.headers.get('Content-Disposition') || '';
+      const matchRfc = disposition.match(/filename\*=UTF-8''(.+)/i);
+      const nombreArchivo = matchRfc ? decodeURIComponent(matchRfc[1]) : 'COMBINADO.pdf';
+
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = nombreArchivo;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+
+      btnUnir.textContent = '✓ Descargado';
+      btnUnir.style.background = 'var(--emerald-600)';
+    } else {
+      const err = await response.json();
+      throw new Error(err.message || `Error ${response.status}`);
+    }
+  } catch (error) {
+    alert('Error al unir PDFs: ' + error.message);
+    btnUnir.disabled = false;
+  } finally {
+    unirLoading.classList.add('hidden');
+  }
+});
 
 // =====================================================
 // HISTORIAL (localStorage)

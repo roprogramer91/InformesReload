@@ -981,3 +981,68 @@ body {
 .historial-estado.ok    { color: var(--emerald-600); }
 .historial-estado.warn  { color: #d97706; }
 .historial-estado.err   { color: #dc2626; }
+
+/* =====================================================
+   UNIR PDFs
+   ===================================================== */
+
+.unir-section {
+  padding: 2rem 0;
+}
+
+.unir-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+  margin-top: 1.5rem;
+}
+
+.unir-slot-label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--gray-600);
+  margin-bottom: 0.5rem;
+}
+
+.unir-drop {
+  border: 2px dashed var(--gray-300);
+  border-radius: 1rem;
+  padding: 2rem 1.5rem;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  background: var(--gray-50);
+}
+
+.unir-drop:hover,
+.unir-drop.drag-over {
+  border-color: var(--primary-500);
+  background: var(--primary-50);
+}
+
+.unir-drop.loaded {
+  border-color: var(--emerald-500);
+  background: #f0fdf4;
+}
+
+.unir-file-name {
+  margin-top: 0.5rem;
+  font-size: 0.82rem;
+  color: var(--emerald-600);
+  font-weight: 500;
+  min-height: 1.2rem;
+}
+
+.unir-actions {
+  margin-top: 2rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+
+@media (max-width: 600px) {
+  .unir-grid {
+    grid-template-columns: 1fr;
+  }
+}
