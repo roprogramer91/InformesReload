@@ -598,6 +598,7 @@ function setupUnirSlot(dropId, inputId, nameId, key) {
   const drop = document.getElementById(dropId);
   const input = document.getElementById(inputId);
   const nameEl = document.getElementById(nameId);
+  if (!drop || !input || !nameEl) return;
 
   drop.addEventListener('click', () => input.click());
   drop.addEventListener('dragover', (e) => { e.preventDefault(); drop.classList.add('drag-over'); });
@@ -610,12 +611,12 @@ function setupUnirSlot(dropId, inputId, nameId, key) {
     else alert('Solo se aceptan archivos PDF');
   });
   input.addEventListener('change', (e) => {
-    if (e.target.files[0]) setUnirFile(key, e.target.files[0], drop, input, nameEl);
+    if (e.target.files[0]) setUnirFile(key, e.target.files[0], drop, nameEl);
     input.value = '';
   });
 }
 
-function setUnirFile(key, file, drop, input, nameEl) {
+function setUnirFile(key, file, drop, nameEl) {
   unirState[key] = file;
   drop.classList.add('loaded');
   nameEl.textContent = file.name;
