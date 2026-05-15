@@ -50,7 +50,7 @@ router.post('/procesar-awp', upload.single('awpFile'), async (req, res) => {
     const nombreArchivo = `${paciente.nombre}.${tipo}`;
     const contentType = tipo === 'pdf' ? 'application/pdf' : 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
     res.setHeader('Content-Type', contentType);
-    res.setHeader('Content-Disposition', `attachment; filename="${nombreArchivo}"`);
+    res.setHeader('Content-Disposition', `attachment; filename*=UTF-8''${encodeURIComponent(nombreArchivo)}`);
     res.setHeader('Content-Length', buffer.length);
 
     console.log('✅ AWP procesado exitosamente:', nombreArchivo);

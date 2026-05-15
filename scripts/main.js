@@ -333,8 +333,9 @@ btnGenerate.addEventListener('click', async () => {
       const a = document.createElement('a');
       a.href = url;
       const contentDisp = response.headers.get('Content-Disposition') || '';
-      const matchName = contentDisp.match(/filename="(.+?)"/);
-      a.download = matchName ? matchName[1] : `${appState.pacienteData.nombre}.pdf`;
+      const matchRfc = contentDisp.match(/filename\*=UTF-8''(.+)/i);
+      const matchPlain = contentDisp.match(/filename="(.+?)"/);
+      a.download = matchRfc ? decodeURIComponent(matchRfc[1]) : matchPlain ? matchPlain[1] : `${appState.pacienteData.nombre}.pdf`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
@@ -498,8 +499,9 @@ async function procesarAwp(file, itemId) {
     if (response.ok) {
       const blob = await response.blob();
       const disposition = response.headers.get('Content-Disposition') || '';
-      const match = disposition.match(/filename="(.+?)"/);
-      const nombreArchivo = match ? match[1] : file.name.replace('.awp', '.pdf');
+      const matchRfc2 = disposition.match(/filename\*=UTF-8''(.+)/i);
+      const matchPlain2 = disposition.match(/filename="(.+?)"/);
+      const nombreArchivo = matchRfc2 ? decodeURIComponent(matchRfc2[1]) : matchPlain2 ? matchPlain2[1] : file.name.replace('.awp', '.pdf');
       const pacienteNombre = nombreArchivo.replace(/\.(pdf|docx)$/, '');
 
       // Auto-descarga inmediata
