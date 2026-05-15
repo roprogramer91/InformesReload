@@ -296,37 +296,63 @@
       <div class="container">
         <div class="step-header">
           <h2>Unir PDFs</h2>
-          <p>Subí los dos archivos PDF para combinarlos en uno solo</p>
+          <p>Seleccioná la institución, subí los dos informes y se genera el PDF final</p>
         </div>
 
-        <div class="unir-grid">
-          <div class="unir-slot" id="unir-slot-1">
-            <div class="unir-slot-label">PDF 1 — Informe del programa (con -P)</div>
-            <div class="unir-drop" id="unir-drop-1">
-              <div class="upload-icon">📄</div>
-              <p class="upload-text">Arrastrá o hacé clic</p>
-              <input type="file" id="unir-input-1" accept=".pdf" hidden />
-            </div>
-            <div class="unir-file-name" id="unir-name-1"></div>
+        <!-- Institución -->
+        <div class="institutions-grid" id="unir-institutions">
+          <div class="institution-card" data-id="consultoriosMedicos">
+            <div class="institution-icon">🏥</div>
+            <h3>Consultorios Médicos</h3>
+            <p>Incluye carátula automática</p>
           </div>
-
-          <div class="unir-slot" id="unir-slot-2">
-            <div class="unir-slot-label">PDF 2 — Informe médico (sin -P)</div>
-            <div class="unir-drop" id="unir-drop-2">
-              <div class="upload-icon">📄</div>
-              <p class="upload-text">Arrastrá o hacé clic</p>
-              <input type="file" id="unir-input-2" accept=".pdf" hidden />
-            </div>
-            <div class="unir-file-name" id="unir-name-2"></div>
+          <div class="institution-card" data-id="vitalNorte">
+            <div class="institution-icon">❤️</div>
+            <h3>Vital Norte</h3>
+            <p>Sin carátula</p>
+          </div>
+          <div class="institution-card" data-id="darmed">
+            <div class="institution-icon">🏨</div>
+            <h3>Darmed</h3>
+            <p>Incluye carátula automática</p>
           </div>
         </div>
 
-        <div class="unir-actions">
-          <div class="loading-spinner hidden" id="unir-loading">
-            <div class="spinner"></div>
-            <p>Combinando PDFs...</p>
+        <!-- Upload slots (se muestran al elegir institución) -->
+        <div class="unir-upload-zone hidden" id="unir-upload-zone">
+          <div class="unir-grid">
+            <div class="unir-slot">
+              <div class="unir-slot-label">Informe médico (sin -P)</div>
+              <div class="unir-drop" id="unir-drop-sinp">
+                <div class="upload-icon">📄</div>
+                <p class="upload-text">Arrastrá o hacé clic</p>
+                <input type="file" id="unir-input-sinp" accept=".pdf" hidden />
+              </div>
+              <div class="unir-file-name" id="unir-name-sinp"></div>
+            </div>
+
+            <div class="unir-slot">
+              <div class="unir-slot-label">Informe ABPM (con -P)</div>
+              <div class="unir-drop" id="unir-drop-conp">
+                <div class="upload-icon">📄</div>
+                <p class="upload-text">Arrastrá o hacé clic</p>
+                <input type="file" id="unir-input-conp" accept=".pdf" hidden />
+              </div>
+              <div class="unir-file-name" id="unir-name-conp"></div>
+            </div>
           </div>
-          <button class="btn btn-success" id="btn-unir" disabled>Unir y Descargar PDF</button>
+
+          <div class="unir-caratula-info hidden" id="unir-caratula-info">
+            ✨ La carátula se generará automáticamente con el nombre del paciente
+          </div>
+
+          <div class="unir-actions">
+            <div class="loading-spinner hidden" id="unir-loading">
+              <div class="spinner"></div>
+              <p>Combinando PDFs...</p>
+            </div>
+            <button class="btn btn-success" id="btn-unir" disabled>Unir y Descargar PDF</button>
+          </div>
         </div>
       </div>
     </div>

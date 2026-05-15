@@ -568,18 +568,38 @@ async function procesarAwp(file, itemId) {
 // UNIR PDFs
 // =====================================================
 
-const unirFiles = { pdf1: null, pdf2: null };
+const unirState = { institucionId: null, sinP: null, conP: null };
 const btnUnir = document.getElementById('btn-unir');
 const unirLoading = document.getElementById('unir-loading');
+const unirUploadZone = document.getElementById('unir-upload-zone');
+const unirCaratulaInfo = document.getElementById('unir-caratula-info');
+const unirInstitutionCards = document.querySelectorAll('#unir-institutions .institution-card');
 
-function setupUnirSlot(slotNum) {
-  const drop = document.getElementById(`unir-drop-${slotNum}`);
-  const input = document.getElementById(`unir-input-${slotNum}`);
-  const nameEl = document.getElementById(`unir-name-${slotNum}`);
-  const key = `pdf${slotNum}`;
+// Instituciones que requieren carátula
+const TIENE_CARATULA = ['consultoriosMedicos', 'darmed'];
+
+unirInstitutionCards.forEach(card => {
+  card.addEventListener('click', () => {
+    unirInstitutionCards.forEach(c => c.classList.remove('selected'));
+    card.classList.add('selected');
+    unirState.institucionId = card.dataset.id;
+    unirUploadZone.classList.remove('hidden');
+    // Mostrar/ocultar aviso de carátula
+    if (TIENE_CARATULA.includes(unirState.institucionId)) {
+      unirCaratulaInfo.classList.remove('hidden');
+    } else {
+      unirCaratulaInfo.classList.add('hidden');
+    }
+    actualizarBtnUnir();
+  });
+});
+
+function setupUnirSlot(dropId, inputId, nameId, key) {
+  const drop = document.getElementById(dropId);
+  const input = document.getElementById(inputId);
+  const nameEl = document.getElementById(nameId);
 
   drop.addEventListener('click', () => input.click());
-
   drop.addEventListener('dragover', (e) => { e.preventDefault(); drop.classList.add('drag-over'); });
   drop.addEventListener('dragleave', () => drop.classList.remove('drag-over'));
   drop.addEventListener('drop', (e) => {
@@ -589,22 +609,29 @@ function setupUnirSlot(slotNum) {
     if (file?.type === 'application/pdf') setUnirFile(key, file, drop, nameEl);
     else alert('Solo se aceptan archivos PDF');
   });
-
   input.addEventListener('change', (e) => {
-    if (e.target.files[0]) setUnirFile(key, e.target.files[0], drop, nameEl);
+    if (e.target.files[0]) setUnirFile(key, e.target.files[0], drop, input, nameEl);
     input.value = '';
   });
 }
 
-function setUnirFile(key, file, drop, nameEl) {
-  unirFiles[key] = file;
+function setUnirFile(key, file, drop, input, nameEl) {
+  unirState[key] = file;
   drop.classList.add('loaded');
   nameEl.textContent = file.name;
-  btnUnir.disabled = !(unirFiles.pdf1 && unirFiles.pdf2);
+  actualizarBtnUnir();
 }
 
-setupUnirSlot(1);
-setupUnirSlot(2);
+function actualizarBtnUnir() {
+  btnUnir.disabled = !(unirState.institucionId && unirState.sinP && unirState.conP);
+  if (btnUnir.disabled === false) {
+    btnUnir.textContent = 'Unir y Descargar PDF';
+    btnUnir.style.background = '';
+  }
+}
+
+setupUnirSlot('unir-drop-sinp', 'unir-input-sinp', 'unir-name-sinp', 'sinP');
+setupUnirSlot('unir-drop-conp', 'unir-input-conp', 'unir-name-conp', 'conP');
 
 btnUnir.addEventListener('click', async () => {
   try {
@@ -612,8 +639,9 @@ btnUnir.addEventListener('click', async () => {
     unirLoading.classList.remove('hidden');
 
     const formData = new FormData();
-    formData.append('pdf1', unirFiles.pdf1);
-    formData.append('pdf2', unirFiles.pdf2);
+    formData.append('pdfSinP', unirState.sinP);
+    formData.append('pdfConP', unirState.conP);
+    formData.append('institucionId', unirState.institucionId);
 
     const response = await fetch(`${API_BASE_URL}/api/unir-pdfs`, {
       method: 'POST',
@@ -624,7 +652,7 @@ btnUnir.addEventListener('click', async () => {
       const blob = await response.blob();
       const disposition = response.headers.get('Content-Disposition') || '';
       const matchRfc = disposition.match(/filename\*=UTF-8''(.+)/i);
-      const nombreArchivo = matchRfc ? decodeURIComponent(matchRfc[1]) : 'COMBINADO.pdf';
+      const nombreArchivo = matchRfc ? decodeURIComponent(matchRfc[1]) : 'informe.pdf';
 
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
