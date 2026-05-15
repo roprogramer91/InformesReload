@@ -351,7 +351,8 @@ btnGenerate.addEventListener('click', async () => {
       if (data.insuficiente) {
         loadingGenerate.style.display = 'none';
 
-        const mensaje = `Paciente: ${data.nombre}\nFecha del estudio: ${data.fecha}\n⚠️ Reclamar: el MAPA no cuenta con las horas/mediciones suficientes para realizar el informe.`;
+        const horas = data.duracionHoras != null ? `${data.duracionHoras} hs (mínimo requerido: ${data.horasMinimas} hs)` : '';
+        const mensaje = `Paciente: ${data.nombre}\nFecha del estudio: ${data.fecha}${horas ? '\nDuración del estudio: ' + horas : ''}\n\u{1F6A8} RECLAMAR: el MAPA no cuenta con las horas/mediciones suficientes para realizar el informe.`;
         const urlWhatsApp = `https://wa.me/5491131080805?text=${encodeURIComponent(mensaje)}`;
         window.open(urlWhatsApp, '_blank');
 

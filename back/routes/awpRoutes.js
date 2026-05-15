@@ -4,7 +4,7 @@ const multer = require('multer');
 const { construirPacienteDesdeAwpBuffer } = require('../functions/parseAwp');
 const { generarInforme } = require('../functions/crearInforme');
 const { convertirDocxAPdf } = require('../functions/convertirPDF');
-const { validarEstudioCompleto } = require('../config/config');
+const { validarEstudioCompleto, HORAS_MINIMAS_ESTUDIO } = require('../config/config');
 
 const upload = multer({ storage: multer.memoryStorage() });
 
@@ -40,7 +40,9 @@ router.post('/procesar-awp', upload.single('awpFile'), async (req, res) => {
       return res.status(422).json({
         insuficiente: true,
         nombre: paciente.nombre,
-        fecha: paciente.fechaFormateada
+        fecha: paciente.fechaFormateada,
+        duracionHoras: paciente.duracionHoras,
+        horasMinimas: HORAS_MINIMAS_ESTUDIO
       });
     }
 

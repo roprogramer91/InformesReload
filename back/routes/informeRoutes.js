@@ -5,7 +5,7 @@
 const express = require('express');
 const router = express.Router();
 const { generarInforme } = require('../functions/crearInforme');
-const { validarEstudioCompleto } = require('../config/config');
+const { validarEstudioCompleto, HORAS_MINIMAS_ESTUDIO } = require('../config/config');
 const { convertirDocxAPdf } = require('../functions/convertirPDF');
 
 /**
@@ -60,7 +60,9 @@ router.post('/generar-informe', async (req, res) => {
       return res.status(422).json({
         insuficiente: true,
         nombre: paciente.nombre,
-        fecha: paciente.fechaFormateada
+        fecha: paciente.fechaFormateada,
+        duracionHoras: paciente.duracionHoras,
+        horasMinimas: HORAS_MINIMAS_ESTUDIO
       });
     }
 
