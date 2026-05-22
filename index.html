@@ -21,6 +21,7 @@
         <button class="mode-tab active" id="btn-mode-pdf">📄 Modo PDF</button>
         <button class="mode-tab" id="btn-mode-awp">📁 Modo AWP — Lote</button>
         <button class="mode-tab" id="btn-mode-unir">📎 Unir PDFs</button>
+        <button class="mode-tab" id="btn-mode-caratula">📋 Agregar Carátula</button>
       </div>
     </div>
 
@@ -357,6 +358,57 @@
       </div>
     </div>
 
+    <!-- Agregar Carátula Section -->
+    <div id="caratula-section" class="caratula-section hidden">
+      <div class="container">
+        <div class="step-header">
+          <h2>Agregar Carátula</h2>
+          <p>Seleccioná la institución y subí el PDF — se genera con la carátula al inicio</p>
+        </div>
+
+        <!-- Solo CM y Darmed tienen carátula -->
+        <div class="institutions-grid" id="caratula-institutions">
+          <div class="institution-card" data-id="consultoriosMedicos">
+            <div class="institution-icon">🏥</div>
+            <h3>Consultorios Médicos</h3>
+            <p>CaratulaA automática</p>
+          </div>
+          <div class="institution-card" data-id="darmed">
+            <div class="institution-icon">🏨</div>
+            <h3>Darmed</h3>
+            <p>CaratulaC automática</p>
+          </div>
+        </div>
+
+        <!-- Upload slot (se muestra al elegir institución) -->
+        <div class="unir-upload-zone hidden" id="caratula-upload-zone">
+          <div class="unir-grid unir-grid--single">
+            <div class="unir-slot">
+              <div class="unir-slot-label">PDF del informe</div>
+              <div class="unir-drop" id="caratula-drop">
+                <div class="upload-icon">📄</div>
+                <p class="upload-text">Arrastrá o hacé clic</p>
+                <input type="file" id="caratula-input" accept=".pdf" hidden />
+              </div>
+              <div class="unir-file-name" id="caratula-name"></div>
+            </div>
+          </div>
+
+          <div class="unir-caratula-info" id="caratula-info-badge">
+            ✨ La carátula se generará automáticamente con el nombre del paciente (del nombre del archivo)
+          </div>
+
+          <div class="unir-actions">
+            <div class="loading-spinner hidden" id="caratula-loading">
+              <div class="spinner"></div>
+              <p>Generando PDF con carátula...</p>
+            </div>
+            <button class="btn btn-success" id="btn-caratula" disabled>Agregar Carátula y Descargar</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- Footer -->
     <footer class="footer">
       <div class="container">
@@ -364,6 +416,6 @@
       </div>
     </footer>
 
-    <script src="scripts/main.js?v=1.4"></script>
+    <script src="scripts/main.js?v=1.5"></script>
   </body>
 </html>

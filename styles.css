@@ -990,11 +990,22 @@ body {
   padding: 2rem 0;
 }
 
+.caratula-section {
+  padding: 2rem 0;
+}
+
 .unir-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 1.5rem;
   margin-top: 1.5rem;
+}
+
+.unir-grid--single {
+  grid-template-columns: 1fr;
+  max-width: 400px;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 .unir-slot-label {

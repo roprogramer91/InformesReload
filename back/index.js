@@ -31,6 +31,7 @@ const medicionesRoutes = require('./routes/medicionesRoutes');
 const informeRoutes = require('./routes/informeRoutes');
 const awpRoutes = require('./routes/awpRoutes');
 const unirPdfsRoutes = require('./routes/unirPdfsRoutes');
+const agregarCaratulaRoutes = require('./routes/agregarCaratulaRoutes');
 
 // Usar rutas
 app.use('/api', pdfRoutes);
@@ -38,6 +39,7 @@ app.use('/api', medicionesRoutes);
 app.use('/api', informeRoutes);
 app.use('/api', awpRoutes);
 app.use('/api', unirPdfsRoutes);
+app.use('/api', agregarCaratulaRoutes);
 
 // Ruta raíz
 app.get('/', (req, res) => {

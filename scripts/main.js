@@ -383,6 +383,8 @@ btnRestart.addEventListener('click', () => {
 // =====================================================
 const btnModeUnir = document.getElementById('btn-mode-unir');
 const unirSection = document.getElementById('unir-section');
+const btnModeCaratula = document.getElementById('btn-mode-caratula');
+const caratulaSection = document.getElementById('caratula-section');
 
 const btnModePdf = document.getElementById('btn-mode-pdf');
 const btnModeAwp = document.getElementById('btn-mode-awp');
@@ -394,10 +396,12 @@ function setActiveTab(tab) {
   btnModePdf.classList.remove('active');
   btnModeAwp.classList.remove('active');
   btnModeUnir.classList.remove('active');
+  btnModeCaratula.classList.remove('active');
   pdfProgress.classList.add('hidden');
   pdfMain.classList.add('hidden');
   awpSection.classList.add('hidden');
   unirSection.classList.add('hidden');
+  caratulaSection.classList.add('hidden');
   tab.classList.add('active');
 }
 
@@ -415,6 +419,11 @@ btnModeAwp.addEventListener('click', () => {
 btnModeUnir.addEventListener('click', () => {
   setActiveTab(btnModeUnir);
   unirSection.classList.remove('hidden');
+});
+
+btnModeCaratula.addEventListener('click', () => {
+  setActiveTab(btnModeCaratula);
+  caratulaSection.classList.remove('hidden');
 });
 
 // =====================================================
@@ -746,6 +755,106 @@ function registrarEnHistorial(nombre, institucion, estado) {
 
 // Cargar historial al iniciar
 renderHistorial();
+
+// =====================================================
+// AGREGAR CARÁTULA
+// =====================================================
+
+const caratulaState = { institucionId: null, pdfFile: null };
+const btnCaratula = document.getElementById('btn-caratula');
+const caratulaLoading = document.getElementById('caratula-loading');
+const caratulaUploadZone = document.getElementById('caratula-upload-zone');
+const caratulaInstitutionCards = document.querySelectorAll('#caratula-institutions .institution-card');
+
+caratulaInstitutionCards.forEach(card => {
+  card.addEventListener('click', () => {
+    caratulaInstitutionCards.forEach(c => c.classList.remove('selected'));
+    card.classList.add('selected');
+    caratulaState.institucionId = card.dataset.id;
+    caratulaUploadZone.classList.remove('hidden');
+    actualizarBtnCaratula();
+  });
+});
+
+// Slot de PDF para carátula — implementación directa (sin reusar setupUnirSlot)
+const caratulaDrop = document.getElementById('caratula-drop');
+const caratulaInput = document.getElementById('caratula-input');
+const caratulaNameEl = document.getElementById('caratula-name');
+
+if (caratulaDrop && caratulaInput && caratulaNameEl) {
+  caratulaDrop.addEventListener('click', () => caratulaInput.click());
+  caratulaDrop.addEventListener('dragover', (e) => { e.preventDefault(); caratulaDrop.classList.add('drag-over'); });
+  caratulaDrop.addEventListener('dragleave', () => caratulaDrop.classList.remove('drag-over'));
+  caratulaDrop.addEventListener('drop', (e) => {
+    e.preventDefault();
+    caratulaDrop.classList.remove('drag-over');
+    const file = e.dataTransfer.files[0];
+    if (file?.type === 'application/pdf') setCaratulaFile(file);
+    else alert('Solo se aceptan archivos PDF');
+  });
+  caratulaInput.addEventListener('change', (e) => {
+    if (e.target.files[0]) setCaratulaFile(e.target.files[0]);
+    caratulaInput.value = '';
+  });
+}
+
+function setCaratulaFile(file) {
+  caratulaState.caratulaFile = file;
+  caratulaDrop.classList.add('loaded');
+  caratulaNameEl.textContent = file.name;
+  actualizarBtnCaratula();
+}
+
+function actualizarBtnCaratula() {
+  btnCaratula.disabled = !(caratulaState.institucionId && caratulaState.caratulaFile);
+  if (!btnCaratula.disabled) {
+    btnCaratula.textContent = 'Agregar Carátula y Descargar';
+    btnCaratula.style.background = '';
+  }
+}
+
+btnCaratula.addEventListener('click', async () => {
+  try {
+    btnCaratula.disabled = true;
+    caratulaLoading.classList.remove('hidden');
+
+    const formData = new FormData();
+    formData.append('pdfFile', caratulaState.caratulaFile);
+    formData.append('institucionId', caratulaState.institucionId);
+
+    const response = await fetch(`${API_BASE_URL}/api/agregar-caratula`, {
+      method: 'POST',
+      body: formData
+    });
+
+    if (response.ok) {
+      const blob = await response.blob();
+      const disposition = response.headers.get('Content-Disposition') || '';
+      const matchRfc = disposition.match(/filename\*=UTF-8''(.+)/i);
+      const nombreArchivo = matchRfc ? decodeURIComponent(matchRfc[1]) : 'informe.pdf';
+
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = nombreArchivo;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+
+      btnCaratula.textContent = '✓ Descargado';
+      btnCaratula.style.background = 'var(--emerald-600)';
+    } else {
+      const err = await response.json();
+      throw new Error(err.message || `Error ${response.status}`);
+    }
+  } catch (error) {
+    alert('Error al agregar carátula: ' + error.message);
+    btnCaratula.disabled = false;
+  } finally {
+    caratulaLoading.classList.add('hidden');
+  }
+});
 
 // =====================================================
 // INICIALIZACIÓN
