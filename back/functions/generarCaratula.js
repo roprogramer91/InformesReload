@@ -5,7 +5,8 @@ const PizZip = require('pizzip');
 
 const CARATULAS = {
   consultoriosMedicos: 'CaratulaA.docx',
-  darmed: 'CaratulaC.docx'
+  darmed: 'CaratulaC.docx',
+  institutoDelta: 'CaratulaD.docx'
 };
 
 function institucionTieneCaratula(institucionId) {

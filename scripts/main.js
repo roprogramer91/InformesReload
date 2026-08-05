@@ -585,7 +585,7 @@ const unirCaratulaInfo = document.getElementById('unir-caratula-info');
 const unirInstitutionCards = document.querySelectorAll('#unir-institutions .institution-card');
 
 // Instituciones que requieren carátula
-const TIENE_CARATULA = ['consultoriosMedicos', 'darmed'];
+const TIENE_CARATULA = ['consultoriosMedicos', 'darmed', 'institutoDelta'];
 
 unirInstitutionCards.forEach(card => {
   card.addEventListener('click', () => {

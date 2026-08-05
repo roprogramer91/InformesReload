@@ -15,7 +15,7 @@ const { convertirDocxAPdf } = require('../functions/convertirPDF');
  * Body esperado:
  * {
  *   paciente: { objeto con todos los datos del paciente },
- *   institucionId: 'consultoriosMedicos' | 'vitalNorte'
+ *   institucionId: 'consultoriosMedicos' | 'vitalNorte' | 'darmed' | 'institutoDelta'
  * }
  */
 router.post('/generar-informe', async (req, res) => {

@@ -12,7 +12,7 @@ const upload = multer({ storage: multer.memoryStorage() });
  * Agrega carátula institucional al inicio de un PDF
  *
  * Body (multipart):
- *   - institucionId: string (consultoriosMedicos | darmed)
+ *   - institucionId: string (consultoriosMedicos | darmed | institutoDelta)
  *   - pdfFile: PDF al que se le agrega la carátula
  */
 router.post('/agregar-caratula', upload.single('pdfFile'), async (req, res) => {

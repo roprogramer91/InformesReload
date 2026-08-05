@@ -57,6 +57,16 @@ const INSTITUCIONES = {
     plantillaFaltaInfo: 'PlantillaC.docx',
     logo: 'darmed.png',
     descripcion: 'Darmed'
+  },
+
+  institutoDelta: {
+    id: 'institutoDelta',
+    nombre: 'Instituto Delta',
+    nombreCompleto: 'Instituto de Cardiología y Terapéutica Endovascular Delta',
+    plantilla: 'PlantillaD.docx',
+    plantillaFaltaInfo: 'PlantillaD.docx',
+    logo: 'instituto_delta.png',
+    descripcion: 'Instituto de cardiología y terapéutica endovascular'
   }
 };
 
