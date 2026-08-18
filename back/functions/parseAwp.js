@@ -13,16 +13,49 @@ function parseAwpBuffer(buffer) {
   return data;
 }
 
-function construirPacienteDesdeAwpBuffer(buffer) {
+function formatearFechaDesdeDate(fecha) {
+  if (!(fecha instanceof Date) || Number.isNaN(fecha.getTime())) return '';
+  const dia = String(fecha.getDate()).padStart(2, '0');
+  const mes = String(fecha.getMonth() + 1).padStart(2, '0');
+  return `${dia}/${mes}/${fecha.getFullYear()}`;
+}
+
+function crearTimestampMedicion(raw) {
+  if (!raw || raw.length < 12) return null;
+
+  const year = parseInt(raw.slice(0, 4), 16);
+  const month = parseInt(raw.slice(4, 6), 16);
+  const day = parseInt(raw.slice(6, 8), 16);
+  const hour = parseInt(raw.slice(8, 10), 16);
+  const minute = parseInt(raw.slice(10, 12), 16);
+  const timestamp = new Date(year, month - 1, day, hour, minute);
+
+  const coincide = timestamp.getFullYear() === year
+    && timestamp.getMonth() === month - 1
+    && timestamp.getDate() === day
+    && timestamp.getHours() === hour
+    && timestamp.getMinutes() === minute;
+
+  return coincide ? timestamp : null;
+}
+
+function construirPacienteDesdeAwpBuffer(buffer, opciones = {}) {
   const data = parseAwpBuffer(buffer);
-  const pd = data['PATIENTDATA'];
-  const ab = data['ABPMDATA'];
+  const pd = data['PATIENTDATA'] || {};
+  const ab = data['ABPMDATA'] || {};
 
   const nombre = pd['Name'] || '';
   const edad = parseInt(pd['Age']) || 0;
 
-  const y = pd['YearBegin'], m = String(pd['MonBegin']).padStart(2, '0'), d = String(pd['DayBegin']).padStart(2, '0');
-  const fechaFormateada = `${d}/${m}/${y}`;
+  const yearAdministrativo = parseInt(pd['YearBegin']);
+  const monthAdministrativo = parseInt(pd['MonBegin']);
+  const dayAdministrativo = parseInt(pd['DayBegin']);
+  const fechaAdministrativaDate = new Date(yearAdministrativo, monthAdministrativo - 1, dayAdministrativo);
+  const fechaAdministrativa = fechaAdministrativaDate.getFullYear() === yearAdministrativo
+    && fechaAdministrativaDate.getMonth() === monthAdministrativo - 1
+    && fechaAdministrativaDate.getDate() === dayAdministrativo
+    ? formatearFechaDesdeDate(fechaAdministrativaDate)
+    : '';
 
   const wakeH = parseInt(pd['AwakeHour']), wakeM = parseInt(pd['AwakeMin']);
   const sleepH = parseInt(pd['AsleepHour']), sleepM = parseInt(pd['AsleepMin']);
@@ -31,25 +64,27 @@ function construirPacienteDesdeAwpBuffer(buffer) {
 
   const total = parseInt(pd['ABPMCount']);
   const validas = [];
+  let primeraMedicionTimestamp = null;
   let primeraTimestamp = null, ultimaTimestamp = null;
 
   for (let i = 1; i <= total; i++) {
     const raw = ab[String(i)];
+    if (!raw) continue;
+
+    const ts = crearTimestampMedicion(raw);
+    if (!ts) continue;
+    if (!primeraMedicionTimestamp || ts < primeraMedicionTimestamp) primeraMedicionTimestamp = ts;
+
     const comment = ab['C' + i] !== undefined ? ab['C' + i] : '';
-    if (!raw || comment !== '') continue;
+    if (comment !== '') continue;
 
     const hour = parseInt(raw.slice(8, 10), 16);
     const min  = parseInt(raw.slice(10, 12), 16);
     const sys  = parseInt(raw.slice(16, 18), 16);
     const dia  = parseInt(raw.slice(20, 22), 16);
 
-    const mYear  = parseInt(raw.slice(0, 4), 16);
-    const mMonth = parseInt(raw.slice(4, 6), 16);
-    const mDay   = parseInt(raw.slice(6, 8), 16);
-
     if (sys === 0 && dia === 0) continue;
 
-    const ts = new Date(mYear, mMonth - 1, mDay, hour, min);
     if (!primeraTimestamp || ts < primeraTimestamp) primeraTimestamp = ts;
     if (!ultimaTimestamp  || ts > ultimaTimestamp)  ultimaTimestamp  = ts;
 
@@ -63,6 +98,9 @@ function construirPacienteDesdeAwpBuffer(buffer) {
     const diffMs = ultimaTimestamp - primeraTimestamp;
     duracionHoras = Math.min(24, Math.round(diffMs / (1000 * 60 * 60)));
   }
+
+  const fechaPrimeraMedicion = formatearFechaDesdeDate(primeraMedicionTimestamp);
+  const fechaFormateada = opciones.fechaCorregida || fechaPrimeraMedicion || fechaAdministrativa;
 
   const despierto = validas.filter(m => m.esDespierto);
   const dormido   = validas.filter(m => !m.esDespierto);
@@ -101,6 +139,8 @@ function construirPacienteDesdeAwpBuffer(buffer) {
     nombre,
     edad,
     fechaFormateada,
+    fechaPrimeraMedicion,
+    fechaAdministrativa,
     duracionHoras,
     todasLasMediasPA: `${sysTotal}/${diaTotal}`,
     mediasPADia:      `${sysDia}/${diaDia}`,

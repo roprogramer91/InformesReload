@@ -8,6 +8,41 @@ const { validarEstudioCompleto, HORAS_MINIMAS_ESTUDIO } = require('../config/con
 
 const upload = multer({ storage: multer.memoryStorage() });
 
+function normalizarFechaCorregida(valor) {
+  if (!valor) return '';
+  const match = String(valor).match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!match) throw new Error('La fecha corregida debe tener formato AAAA-MM-DD');
+
+  const [, year, month, day] = match;
+  const fecha = new Date(Number(year), Number(month) - 1, Number(day));
+  const valida = fecha.getFullYear() === Number(year)
+    && fecha.getMonth() === Number(month) - 1
+    && fecha.getDate() === Number(day);
+  if (!valida) throw new Error('La fecha corregida no es vÃ¡lida');
+
+  return `${day}/${month}/${year}`;
+}
+
+router.post('/inspeccionar-awp', upload.single('awpFile'), (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ success: false, message: 'No se recibiÃ³ el archivo AWP' });
+    }
+
+    const paciente = construirPacienteDesdeAwpBuffer(req.file.buffer);
+    res.json({
+      success: true,
+      data: {
+        nombre: paciente.nombre || req.file.originalname.replace(/\.awp$/i, ''),
+        fechaDetectada: paciente.fechaPrimeraMedicion || paciente.fechaFormateada,
+        fechaAdministrativa: paciente.fechaAdministrativa || ''
+      }
+    });
+  } catch (error) {
+    res.status(400).json({ success: false, message: 'No se pudo inspeccionar el AWP', error: error.message });
+  }
+});
+
 /**
  * POST /api/procesar-awp
  * Recibe un archivo .awp + institucionId, devuelve PDF o 422 si insuficiente
@@ -25,7 +60,14 @@ router.post('/procesar-awp', upload.single('awpFile'), async (req, res) => {
 
     console.log('📂 Procesando AWP:', req.file.originalname);
 
-    const paciente = construirPacienteDesdeAwpBuffer(req.file.buffer);
+    let fechaCorregida = '';
+    try {
+      fechaCorregida = normalizarFechaCorregida(req.body.fechaCorregida);
+    } catch (error) {
+      return res.status(400).json({ success: false, message: error.message });
+    }
+
+    const paciente = construirPacienteDesdeAwpBuffer(req.file.buffer, { fechaCorregida });
 
     console.log('👤 Paciente:', paciente.nombre, '| Diurnas:', paciente.medicionesDiurnas, '| Nocturnas:', paciente.medicionesNocturnas);
 

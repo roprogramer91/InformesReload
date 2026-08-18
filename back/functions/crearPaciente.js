@@ -58,6 +58,34 @@ function extraerEdad(texto) {
 function extraerFechas(texto) {
   try {
     const lineas = texto.split('\n');
+
+    // La fecha confiable es la de la primera mediciÃ³n registrada en la tabla.
+    // Los encabezados Inicio/Fin pueden venir invertidos en reportes ABPM.
+    const regexMedicion = /^\s*\d+\+*\s+(\d{4})\/(\d{1,2})\/(\d{1,2})\s+(\d{1,2}):(\d{2})/gm;
+    let primeraMedicion = null;
+    let matchMedicion;
+    while ((matchMedicion = regexMedicion.exec(texto)) !== null) {
+      const [, year, month, day, hour, minute] = matchMedicion;
+      const timestamp = new Date(
+        Number(year),
+        Number(month) - 1,
+        Number(day),
+        Number(hour),
+        Number(minute)
+      );
+      const coincide = timestamp.getFullYear() === Number(year)
+        && timestamp.getMonth() === Number(month) - 1
+        && timestamp.getDate() === Number(day)
+        && timestamp.getHours() === Number(hour)
+        && timestamp.getMinutes() === Number(minute);
+      if (coincide && (!primeraMedicion || timestamp < primeraMedicion)) {
+        primeraMedicion = timestamp;
+      }
+    }
+
+    const fechaPrimeraMedicion = primeraMedicion
+      ? `${primeraMedicion.getFullYear()}/${String(primeraMedicion.getMonth() + 1).padStart(2, '0')}/${String(primeraMedicion.getDate()).padStart(2, '0')} ${String(primeraMedicion.getHours()).padStart(2, '0')}:${String(primeraMedicion.getMinutes()).padStart(2, '0')}`
+      : '';
     
     // Fecha de inicio
     const matchInicio = texto.match(/Inicio prueba:\s*\t?(\d{4}\/\d{2}\/\d{2}\s+\d{2}:\d{2})/);
@@ -84,13 +112,14 @@ function extraerFechas(texto) {
     }
     
     return {
+      fechaPrimeraMedicion,
       fechaInicio,
       fechaFin,
       duracion
     };
   } catch (error) {
     console.error('Error al extraer fechas:', error);
-    return { fechaInicio: '', fechaFin: '', duracion: '' };
+    return { fechaPrimeraMedicion: '', fechaInicio: '', fechaFin: '', duracion: '' };
   }
 }
 
@@ -246,8 +275,10 @@ function construirPaciente(textoPDF) {
       clasificacionPA: clasificacionPA
     });
     
-    // Formatear fecha (usar fecha de FIN para el informe)
-    const fechaFormateada = formatearFecha(fechas.fechaFin);
+    // Usar la primera mediciÃ³n; recurrir al encabezado solo como respaldo.
+    const fechaFormateada = formatearFecha(
+      fechas.fechaPrimeraMedicion || fechas.fechaInicio || fechas.fechaFin
+    );
     
     // Ajustar horas de duración
     const duracionHoras = ajustarHoraDuracion(fechas.duracion);
@@ -259,6 +290,7 @@ function construirPaciente(textoPDF) {
       
       // Fechas del estudio
       fechaInicio: fechas.fechaInicio,
+      fechaPrimeraMedicion: fechas.fechaPrimeraMedicion,
       fechaFormateada,
       fechaFin: fechas.fechaFin,
       duracion: fechas.duracion,

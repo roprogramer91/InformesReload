@@ -385,6 +385,8 @@ const btnModeUnir = document.getElementById('btn-mode-unir');
 const unirSection = document.getElementById('unir-section');
 const btnModeCaratula = document.getElementById('btn-mode-caratula');
 const caratulaSection = document.getElementById('caratula-section');
+const btnModeFecha = document.getElementById('btn-mode-fecha');
+const fechaSection = document.getElementById('fecha-section');
 
 const btnModePdf = document.getElementById('btn-mode-pdf');
 const btnModeAwp = document.getElementById('btn-mode-awp');
@@ -397,11 +399,13 @@ function setActiveTab(tab) {
   btnModeAwp.classList.remove('active');
   btnModeUnir.classList.remove('active');
   btnModeCaratula.classList.remove('active');
+  btnModeFecha.classList.remove('active');
   pdfProgress.classList.add('hidden');
   pdfMain.classList.add('hidden');
   awpSection.classList.add('hidden');
   unirSection.classList.add('hidden');
   caratulaSection.classList.add('hidden');
+  fechaSection.classList.add('hidden');
   tab.classList.add('active');
 }
 
@@ -414,6 +418,11 @@ btnModePdf.addEventListener('click', () => {
 btnModeAwp.addEventListener('click', () => {
   setActiveTab(btnModeAwp);
   awpSection.classList.remove('hidden');
+});
+
+btnModeFecha.addEventListener('click', () => {
+  setActiveTab(btnModeFecha);
+  fechaSection.classList.remove('hidden');
 });
 
 btnModeUnir.addEventListener('click', () => {
@@ -572,6 +581,214 @@ async function procesarAwp(file, itemId) {
     registrarEnHistorial(file.name, awpState.institucionNombre || '-', 'err');
   }
 }
+
+// =====================================================
+// CORREGIR FECHA AWP
+// =====================================================
+
+const fechaState = {
+  institucionId: null,
+  institucionNombre: null,
+  filas: []
+};
+
+const fechaInstitutionCards = document.querySelectorAll('#fecha-institutions .institution-card');
+const fechaUploadZone = document.getElementById('fecha-upload-zone');
+const fechaDropArea = document.getElementById('fecha-drop-area');
+const fechaInput = document.getElementById('fecha-input');
+const fechaFileList = document.getElementById('fecha-file-list');
+const fechaActions = document.getElementById('fecha-actions');
+const fechaLoading = document.getElementById('fecha-loading');
+const btnRegenerarFechas = document.getElementById('btn-regenerar-fechas');
+
+fechaInstitutionCards.forEach(card => {
+  card.addEventListener('click', () => {
+    fechaInstitutionCards.forEach(c => c.classList.remove('selected'));
+    card.classList.add('selected');
+    fechaState.institucionId = card.dataset.id;
+    fechaState.institucionNombre = card.querySelector('h3').textContent;
+    fechaUploadZone.classList.remove('hidden');
+    actualizarBtnRegenerarFechas();
+  });
+});
+
+fechaDropArea.addEventListener('click', () => fechaInput.click());
+fechaDropArea.addEventListener('dragover', (event) => {
+  event.preventDefault();
+  fechaDropArea.classList.add('drag-over');
+});
+fechaDropArea.addEventListener('dragleave', () => fechaDropArea.classList.remove('drag-over'));
+fechaDropArea.addEventListener('drop', (event) => {
+  event.preventDefault();
+  fechaDropArea.classList.remove('drag-over');
+  const files = Array.from(event.dataTransfer.files).filter(file => file.name.toLowerCase().endsWith('.awp'));
+  if (files.length === 0) {
+    alert('Solo se aceptan archivos .awp');
+    return;
+  }
+  cargarArchivosParaCorregir(files);
+});
+
+fechaInput.addEventListener('change', event => {
+  const files = Array.from(event.target.files).filter(file => file.name.toLowerCase().endsWith('.awp'));
+  if (files.length > 0) cargarArchivosParaCorregir(files);
+  fechaInput.value = '';
+});
+
+function fechaInformeAInput(fecha) {
+  const match = String(fecha || '').match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+  return match ? `${match[3]}-${match[2]}-${match[1]}` : '';
+}
+
+function crearFilaCorreccion(file) {
+  const item = document.createElement('div');
+  item.className = 'fecha-file-item';
+
+  const paciente = document.createElement('div');
+  paciente.className = 'fecha-file-paciente';
+  const nombre = document.createElement('strong');
+  nombre.textContent = 'Leyendo AWP...';
+  const archivo = document.createElement('span');
+  archivo.textContent = file.name;
+  paciente.append(nombre, archivo);
+
+  const detectadaField = document.createElement('div');
+  detectadaField.className = 'fecha-field';
+  const detectadaLabel = document.createElement('label');
+  detectadaLabel.textContent = 'Primera medición';
+  const detectada = document.createElement('strong');
+  detectada.textContent = '...';
+  detectadaField.append(detectadaLabel, detectada);
+
+  const correccionField = document.createElement('div');
+  correccionField.className = 'fecha-field';
+  const correccionLabel = document.createElement('label');
+  correccionLabel.textContent = 'Fecha del informe';
+  const input = document.createElement('input');
+  input.type = 'date';
+  input.disabled = true;
+  input.addEventListener('input', actualizarBtnRegenerarFechas);
+  correccionField.append(correccionLabel, input);
+
+  const status = document.createElement('div');
+  status.className = 'fecha-row-status';
+  status.textContent = 'Inspeccionando...';
+
+  item.append(paciente, detectadaField, correccionField, status);
+  fechaFileList.appendChild(item);
+
+  return { file, item, nombre, archivo, detectada, input, status, lista: true };
+}
+
+async function cargarArchivosParaCorregir(files) {
+  fechaFileList.innerHTML = '';
+  fechaState.filas = files.map(crearFilaCorreccion);
+  fechaActions.classList.remove('hidden');
+  actualizarBtnRegenerarFechas();
+
+  await Promise.all(fechaState.filas.map(inspeccionarFilaFecha));
+  actualizarBtnRegenerarFechas();
+}
+
+async function inspeccionarFilaFecha(fila) {
+  try {
+    const formData = new FormData();
+    formData.append('awpFile', fila.file);
+    const response = await fetch(`${API_BASE_URL}/api/inspeccionar-awp`, {
+      method: 'POST',
+      body: formData
+    });
+    const result = await response.json();
+    if (!response.ok || !result.success) {
+      throw new Error(result.message || `Error ${response.status}`);
+    }
+
+    fila.nombre.textContent = result.data.nombre || fila.file.name.replace(/\.awp$/i, '');
+    fila.detectada.textContent = result.data.fechaDetectada || 'No detectada';
+    fila.input.value = fechaInformeAInput(result.data.fechaDetectada);
+    fila.input.disabled = false;
+    fila.status.textContent = result.data.fechaAdministrativa
+      && result.data.fechaAdministrativa !== result.data.fechaDetectada
+      ? `Administrativa: ${result.data.fechaAdministrativa}`
+      : 'Lista para corregir';
+  } catch (error) {
+    fila.item.classList.add('err');
+    fila.status.textContent = error.message;
+    fila.lista = false;
+  }
+}
+
+function actualizarBtnRegenerarFechas() {
+  const hayFilasValidas = fechaState.filas.some(fila => fila.lista && !fila.input.disabled && fila.input.value);
+  btnRegenerarFechas.disabled = !(fechaState.institucionId && hayFilasValidas);
+}
+
+async function descargarRespuesta(response, nombreAlternativo) {
+  const blob = await response.blob();
+  const disposition = response.headers.get('Content-Disposition') || '';
+  const matchRfc = disposition.match(/filename\*=UTF-8''(.+)/i);
+  const matchPlain = disposition.match(/filename="(.+?)"/);
+  const nombreArchivo = matchRfc
+    ? decodeURIComponent(matchRfc[1])
+    : matchPlain
+      ? matchPlain[1]
+      : nombreAlternativo;
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement('a');
+  anchor.href = url;
+  anchor.download = nombreArchivo;
+  document.body.appendChild(anchor);
+  anchor.click();
+  document.body.removeChild(anchor);
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  return nombreArchivo;
+}
+
+btnRegenerarFechas.addEventListener('click', async () => {
+  const filas = fechaState.filas.filter(fila => fila.lista && fila.input.value);
+  if (filas.length === 0) return;
+
+  btnRegenerarFechas.disabled = true;
+  fechaLoading.classList.remove('hidden');
+
+  for (const fila of filas) {
+    try {
+      fila.status.textContent = 'Regenerando...';
+      const formData = new FormData();
+      formData.append('awpFile', fila.file);
+      formData.append('institucionId', fechaState.institucionId);
+      formData.append('fechaCorregida', fila.input.value);
+
+      const response = await fetch(`${API_BASE_URL}/api/procesar-awp`, {
+        method: 'POST',
+        body: formData
+      });
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || `Error ${response.status}`);
+      }
+
+      const nombreArchivo = await descargarRespuesta(
+        response,
+        fila.file.name.replace(/\.awp$/i, '.pdf')
+      );
+      fila.item.classList.remove('err');
+      fila.item.classList.add('ok');
+      fila.status.textContent = 'Descargado';
+      registrarEnHistorial(
+        nombreArchivo.replace(/\.(pdf|docx)$/i, ''),
+        `${fechaState.institucionNombre} (fecha corregida)`,
+        'ok'
+      );
+    } catch (error) {
+      fila.item.classList.add('err');
+      fila.status.textContent = error.message;
+    }
+  }
+
+  fechaLoading.classList.add('hidden');
+  actualizarBtnRegenerarFechas();
+});
 
 // =====================================================
 // UNIR PDFs

@@ -748,6 +748,7 @@ body {
   padding: 0 1.5rem;
   max-width: 1200px;
   margin: 0 auto;
+  overflow-x: auto;
 }
 
 .mode-tab {
@@ -765,6 +766,7 @@ body {
   bottom: -1px;
   -webkit-user-select: none;
   user-select: none;
+  flex-shrink: 0;
 }
 
 .mode-tab:hover:not(.active) {
@@ -896,6 +898,112 @@ body {
   cursor: pointer;
   white-space: nowrap;
   flex-shrink: 0;
+}
+
+/* =====================================================
+   CORREGIR FECHA AWP
+   ===================================================== */
+
+.fecha-section {
+  padding: 2rem 0;
+}
+
+.fecha-upload-zone {
+  margin-top: 2rem;
+}
+
+.fecha-file-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+}
+
+.fecha-file-item {
+  display: grid;
+  grid-template-columns: minmax(220px, 1fr) minmax(150px, 0.6fr) minmax(180px, 0.7fr) auto;
+  gap: 1rem;
+  align-items: center;
+  padding: 1rem 1.25rem;
+  background: var(--white);
+  border: 1px solid var(--gray-200);
+  border-radius: 0.75rem;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+}
+
+.fecha-file-item.ok {
+  border-left: 4px solid var(--emerald-500);
+}
+
+.fecha-file-item.err {
+  border-left: 4px solid #dc2626;
+}
+
+.fecha-file-paciente {
+  min-width: 0;
+}
+
+.fecha-file-paciente strong,
+.fecha-field label {
+  display: block;
+  color: var(--gray-800);
+}
+
+.fecha-file-paciente strong {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.fecha-file-paciente span,
+.fecha-field label,
+.fecha-row-status {
+  font-size: 0.78rem;
+  color: var(--gray-500);
+}
+
+.fecha-field label {
+  margin-bottom: 0.3rem;
+  font-weight: 600;
+}
+
+.fecha-field input {
+  width: 100%;
+  padding: 0.55rem 0.65rem;
+  border: 1px solid var(--gray-300);
+  border-radius: 0.45rem;
+  color: var(--gray-800);
+  background: var(--white);
+  font: inherit;
+}
+
+.fecha-field input:focus {
+  outline: 2px solid var(--primary-200);
+  border-color: var(--primary-500);
+}
+
+.fecha-row-status {
+  min-width: 110px;
+  text-align: right;
+  font-weight: 600;
+}
+
+.fecha-actions {
+  margin-top: 2rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+
+@media (max-width: 800px) {
+  .fecha-file-item {
+    grid-template-columns: 1fr;
+  }
+
+  .fecha-row-status {
+    text-align: left;
+  }
 }
 
 /* =====================================================

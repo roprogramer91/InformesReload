@@ -20,6 +20,7 @@
       <div class="mode-tabs">
         <button class="mode-tab active" id="btn-mode-pdf">📄 Modo PDF</button>
         <button class="mode-tab" id="btn-mode-awp">📁 Modo AWP — Lote</button>
+        <button class="mode-tab" id="btn-mode-fecha">Corregir Fecha</button>
         <button class="mode-tab" id="btn-mode-unir">📎 Unir PDFs</button>
         <button class="mode-tab" id="btn-mode-caratula">📋 Agregar Carátula</button>
       </div>
@@ -303,6 +304,60 @@
       </div>
     </div>
 
+    <!-- Corregir fecha AWP Section -->
+    <div id="fecha-section" class="fecha-section hidden">
+      <div class="container">
+        <div class="step-header">
+          <h2>Corregir fecha de informes AWP</h2>
+          <p>Seleccioná la institución, cargá los AWP y corregí únicamente los casos necesarios</p>
+        </div>
+
+        <div class="institutions-grid" id="fecha-institutions">
+          <div class="institution-card" data-id="consultoriosMedicos">
+            <div class="institution-icon">🏥</div>
+            <h3>Consultorios Médicos</h3>
+            <p>Centro de Diagnóstico</p>
+          </div>
+          <div class="institution-card" data-id="vitalNorte">
+            <div class="institution-icon">❤️</div>
+            <h3>Vital Norte</h3>
+            <p>Instituto de Salud</p>
+          </div>
+          <div class="institution-card" data-id="darmed">
+            <div class="institution-icon">🏨</div>
+            <h3>Darmed</h3>
+            <p>Centro Médico</p>
+          </div>
+          <div class="institution-card" data-id="institutoDelta">
+            <div class="institution-icon">🏥</div>
+            <h3>Instituto Delta</h3>
+            <p>Cardiología y Terapéutica Endovascular</p>
+          </div>
+        </div>
+
+        <div class="fecha-upload-zone hidden" id="fecha-upload-zone">
+          <div class="awp-drop-area" id="fecha-drop-area">
+            <div class="upload-icon">📁</div>
+            <p class="upload-text">Arrastrá los AWP a corregir o hacé clic para seleccionarlos</p>
+            <p class="upload-subtext">La fecha detectada se obtiene de la primera medición</p>
+            <input type="file" id="fecha-input" accept=".awp" multiple hidden />
+          </div>
+
+          <div id="fecha-file-list" class="fecha-file-list"></div>
+
+          <div class="fecha-actions hidden" id="fecha-actions">
+            <div class="loading-spinner hidden" id="fecha-loading">
+              <div class="spinner"></div>
+              <p>Regenerando informes...</p>
+            </div>
+            <button class="btn btn-success" id="btn-regenerar-fechas" disabled>
+              Regenerar y Descargar Informes
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- Unir PDFs Section -->
     <div id="unir-section" class="unir-section hidden">
       <div class="container">
@@ -437,6 +492,6 @@
       </div>
     </footer>
 
-    <script src="scripts/main.js?v=1.6"></script>
+    <script src="scripts/main.js?v=1.7"></script>
   </body>
 </html>
