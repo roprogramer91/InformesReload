@@ -2,6 +2,7 @@ const fs = require('fs');
 const path = require('path');
 const Docxtemplater = require('docxtemplater');
 const PizZip = require('pizzip');
+const institutionService = require('../services/institutionService');
 
 const CARATULAS = {
   consultoriosMedicos: 'CaratulaA.docx',
@@ -9,11 +10,16 @@ const CARATULAS = {
   institutoDelta: 'CaratulaD.docx'
 };
 
-function institucionTieneCaratula(institucionId) {
-  return !!CARATULAS[institucionId];
+async function institucionTieneCaratula(institucionId) {
+  const institution = await institutionService.getByName(institucionId);
+  return !!institution?.hasCover && !!CARATULAS[institucionId];
 }
 
-function generarCaratulaDocx(nombre, institucionId) {
+async function generarCaratulaDocx(nombre, institucionId) {
+  const institution = await institutionService.getByName(institucionId);
+  if (!institution?.hasCover) {
+    throw new Error(`La institución ${institucionId} no tiene carátula`);
+  }
   const archivo = CARATULAS[institucionId];
   if (!archivo) throw new Error(`La institución ${institucionId} no tiene carátula`);
 

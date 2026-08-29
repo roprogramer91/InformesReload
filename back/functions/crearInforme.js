@@ -9,10 +9,13 @@ const fs = require('fs');
 const path = require('path');
 const Docxtemplater = require('docxtemplater');
 const PizZip = require('pizzip');
-const { 
-  obtenerConfiguracionInstitucion, 
-  validarEstudioCompleto
-} = require('../config/config');
+const { validarEstudioCompleto } = require('../config/config');
+const institutionService = require('../services/institutionService');
+
+const PLANTILLAS_INSUFICIENTES = {
+  consultoriosMedicos: 'PlantillaFaltaInfo-CM.docx',
+  vitalNorte: 'PlantillaFaltaInfo-VN.docx',
+};
 
 /**
  * Genera un informe médico en formato Word
@@ -21,16 +24,16 @@ const {
  * @param {string} institucionId - ID de la institución (consultoriosMedicos, vitalNorte)
  * @returns {Buffer} - Buffer del documento Word generado
  */
-function generarInforme(paciente, institucionId) {
+async function generarInforme(paciente, institucionId) {
   try {
     // Obtener configuración de la institución
-    const institucion = obtenerConfiguracionInstitucion(institucionId);
+    const institucion = await institutionService.getByName(institucionId);
     
     if (!institucion) {
       throw new Error(`Institución no válida: ${institucionId}`);
     }
     
-    console.log(`📄 Generando informe para institución: ${institucion.nombre}`);
+    console.log(`📄 Generando informe para institución: ${institucion.name}`);
     
     // Validar estudio completo (horas + mediciones)
     const duracionHoras = paciente.duracionHoras || 0;
@@ -47,7 +50,7 @@ function generarInforme(paciente, institucionId) {
     let plantillaAUsar;
     if (validacion.valido) {
       // Estudio válido: usar plantilla normal
-      plantillaAUsar = institucion.plantilla;
+      plantillaAUsar = institucion.template;
       console.log(`✅ Estudio VÁLIDO`);
       console.log(`   - Duración: ${duracionHoras} hrs`);
       console.log(`   - Mediciones diurnas: ${medicionesDiurnas}`);
@@ -55,7 +58,7 @@ function generarInforme(paciente, institucionId) {
       console.log(`   - Plantilla: ${plantillaAUsar}`);
     } else {
       // Estudio insuficiente: usar plantilla "FaltaInfo"
-      plantillaAUsar = institucion.plantillaFaltaInfo;
+      plantillaAUsar = PLANTILLAS_INSUFICIENTES[institucion.name] || institucion.template;
       console.log(`⚠️  Estudio INSUFICIENTE - Motivos:`);
       validacion.motivos.forEach(motivo => console.log(`   - ${motivo}`));
       console.log(`   - Plantilla: ${plantillaAUsar}`);
@@ -152,10 +155,10 @@ function generarInforme(paciente, institucionId) {
  * @param {string} rutaSalida - Ruta donde guardar el archivo (opcional)
  * @returns {string} - Ruta del archivo generado
  */
-function generarYGuardarInforme(paciente, institucionId, rutaSalida) {
+async function generarYGuardarInforme(paciente, institucionId, rutaSalida) {
   try {
     // Generar el informe
-    const buffer = generarInforme(paciente, institucionId);
+    const buffer = await generarInforme(paciente, institucionId);
     
     // Determinar la ruta de salida
     if (!rutaSalida) {
@@ -195,10 +198,10 @@ module.exports = {
  * @param {string} rutaSalida - Ruta donde guardar el archivo (opcional)
  * @returns {string} - Ruta del archivo generado
  */
-function generarYGuardarInforme(paciente, institucionId, rutaSalida) {
+async function generarYGuardarInforme(paciente, institucionId, rutaSalida) {
   try {
     // Generar el informe
-    const buffer = generarInforme(paciente, institucionId);
+    const buffer = await generarInforme(paciente, institucionId);
     
     // Determinar la ruta de salida
     if (!rutaSalida) {

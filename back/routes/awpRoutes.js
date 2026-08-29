@@ -88,7 +88,7 @@ router.post('/procesar-awp', upload.single('awpFile'), async (req, res) => {
       });
     }
 
-    const docxBuffer = generarInforme(paciente, institucionId);
+    const docxBuffer = await generarInforme(paciente, institucionId);
     const { buffer, tipo } = convertirDocxAPdf(docxBuffer);
 
     const nombreArchivo = `${paciente.nombre}.${tipo}`;

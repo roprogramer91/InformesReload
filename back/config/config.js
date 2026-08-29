@@ -24,81 +24,6 @@ const HORAS_MINIMAS_ESTUDIO = 17;
 const MEDICIONES_DIURNAS_MINIMAS = 20;
 const MEDICIONES_NOCTURNAS_MINIMAS = 7;
 
-// =====================================================
-// CONFIGURACIÓN DE INSTITUCIONES
-// =====================================================
-
-const INSTITUCIONES = {
-  consultoriosMedicos: {
-    id: 'consultoriosMedicos',
-    nombre: 'Consultorios Médicos',
-    nombreCompleto: 'Consultorios Médicos - Centro de Diagnóstico',
-    plantilla: 'PlantillaA.docx',
-    plantillaFaltaInfo: 'PlantillaFaltaInfo-CM.docx',
-    logo: 'consultorios_medicos.png',
-    descripcion: 'Centro de diagnóstico médico especializado'
-  },
-  
-  vitalNorte: {
-    id: 'vitalNorte',
-    nombre: 'Vital Norte',
-    nombreCompleto: 'Vital Norte - Instituto de Salud',
-    plantilla: 'PlantillaB.docx',
-    plantillaFaltaInfo: 'PlantillaFaltaInfo-VN.docx',
-    logo: 'vital_norte.png',
-    descripcion: 'Instituto de salud integral'
-  },
-
-  darmed: {
-    id: 'darmed',
-    nombre: 'Darmed',
-    nombreCompleto: 'Darmed',
-    plantilla: 'PlantillaC.docx',
-    plantillaFaltaInfo: 'PlantillaC.docx',
-    logo: 'darmed.png',
-    descripcion: 'Darmed'
-  },
-
-  institutoDelta: {
-    id: 'institutoDelta',
-    nombre: 'Instituto Delta',
-    nombreCompleto: 'Instituto de Cardiología y Terapéutica Endovascular Delta',
-    plantilla: 'PlantillaD.docx',
-    plantillaFaltaInfo: 'PlantillaD.docx',
-    logo: 'instituto_delta.png',
-    descripcion: 'Instituto de cardiología y terapéutica endovascular'
-  }
-};
-
-/**
- * Obtiene la configuración de una institución por su ID
- * 
- * @param {string} institucionId - ID de la institución
- * @returns {Object|null} - Configuración de la institución o null si no existe
- */
-function obtenerConfiguracionInstitucion(institucionId) {
-  return INSTITUCIONES[institucionId] || null;
-}
-
-/**
- * Verifica si un ID de institución es válido
- * 
- * @param {string} institucionId - ID de la institución a verificar
- * @returns {boolean} - true si es válido, false si no
- */
-function esInstitucionValida(institucionId) {
-  return INSTITUCIONES.hasOwnProperty(institucionId);
-}
-
-/**
- * Obtiene todas las instituciones disponibles
- * 
- * @returns {Array} - Array con todas las configuraciones de instituciones
- */
-function obtenerTodasLasInstituciones() {
-  return Object.values(INSTITUCIONES);
-}
-
 /**
  * Obtiene el umbral mínimo de horas para un estudio válido
  * 
@@ -168,13 +93,9 @@ function esEstudioValido(horas) {
 }
 
 module.exports = {
-  INSTITUCIONES,
   HORAS_MINIMAS_ESTUDIO,
   MEDICIONES_DIURNAS_MINIMAS,
   MEDICIONES_NOCTURNAS_MINIMAS,
-  obtenerConfiguracionInstitucion,
-  esInstitucionValida,
-  obtenerTodasLasInstituciones,
   obtenerHorasMinimasEstudio,
   obtenerMedicionesMinimasEstudio,
   validarEstudioCompleto,

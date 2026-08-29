@@ -1,0 +1,17 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Institution {
+  name        String  @id
+  active      Boolean @default(true)
+  template    String
+  hasCover    Boolean @default(false)
+  dniRequired Boolean @default(false)
+  showDni     Boolean @default(false)
+}

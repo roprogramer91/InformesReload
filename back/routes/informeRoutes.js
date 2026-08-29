@@ -67,7 +67,7 @@ router.post('/generar-informe', async (req, res) => {
     }
 
     // Generar el DOCX y convertir a PDF (o DOCX si LibreOffice no disponible)
-    const docxBuffer = generarInforme(paciente, institucionId);
+    const docxBuffer = await generarInforme(paciente, institucionId);
     const { buffer, tipo } = convertirDocxAPdf(docxBuffer);
 
     const nombreArchivo = `${paciente.nombre}.${tipo}`;

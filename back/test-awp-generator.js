@@ -142,23 +142,27 @@ function construirPacienteDesdeAwp(awpPath) {
   };
 }
 
-// === MAIN ===
-const awpFile      = process.argv[2] || './test-pdfs/2026042110195401.awp';
-const institucionId = process.argv[3] || 'vitalNorte';
+async function main() {
+  const awpFile = process.argv[2] || './test-pdfs/2026042110195401.awp';
+  const institucionId = process.argv[3] || 'vitalNorte';
 
-console.log('Procesando:', awpFile);
-const paciente = construirPacienteDesdeAwp(awpFile);
+  console.log('Procesando:', awpFile);
+  const paciente = construirPacienteDesdeAwp(awpFile);
 
-console.log('\n=== DATOS DEL PACIENTE ===');
-console.log(JSON.stringify(paciente, null, 2));
+  console.log('\n=== DATOS DEL PACIENTE ===');
+  console.log(JSON.stringify(paciente, null, 2));
 
-console.log('\n=== GENERANDO INFORME ===');
-const docxBuffer = generarInforme(paciente, institucionId);
+  console.log('\n=== GENERANDO INFORME ===');
+  const docxBuffer = await generarInforme(paciente, institucionId);
 
-// Local: guardar como DOCX (LibreOffice no disponible en Windows local)
-// En Railway la conversión a PDF funciona correctamente
-const outputPath = path.join(__dirname, 'output', `${paciente.nombre}.docx`);
-fs.mkdirSync(path.dirname(outputPath), { recursive: true });
-fs.writeFileSync(outputPath, docxBuffer);
+  const outputPath = path.join(__dirname, 'output', `${paciente.nombre}.docx`);
+  fs.mkdirSync(path.dirname(outputPath), { recursive: true });
+  fs.writeFileSync(outputPath, docxBuffer);
 
-console.log('\n✅ DOCX generado (verificar contenido):', outputPath);
+  console.log('\n✅ DOCX generado (verificar contenido):', outputPath);
+}
+
+main().catch(error => {
+  console.error(error);
+  process.exitCode = 1;
+});

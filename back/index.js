@@ -32,6 +32,7 @@ const informeRoutes = require('./routes/informeRoutes');
 const awpRoutes = require('./routes/awpRoutes');
 const unirPdfsRoutes = require('./routes/unirPdfsRoutes');
 const agregarCaratulaRoutes = require('./routes/agregarCaratulaRoutes');
+const institutionRoutes = require('./routes/institutionRoutes');
 
 // Usar rutas
 app.use('/api', pdfRoutes);
@@ -40,6 +41,7 @@ app.use('/api', informeRoutes);
 app.use('/api', awpRoutes);
 app.use('/api', unirPdfsRoutes);
 app.use('/api', agregarCaratulaRoutes);
+app.use('/api', institutionRoutes);
 
 // Ruta raíz
 app.get('/', (req, res) => {
@@ -64,15 +66,22 @@ app.get('/test', (req, res) => {
 // PUERTO Y ARRANQUE
 // ====================
 
-const PORT = process.env.PORT || 3000;
+function startServer(port = process.env.PORT || 3000) {
+  return app.listen(port, () => {
+    console.log(`🚀 Informatron API iniciado`);
+    console.log(`📡 Servidor escuchando en http://localhost:${port}`);
+    console.log(`📋 Endpoints disponibles:`);
+    console.log(`   GET  / - Información de la API`);
+    console.log(`   GET  /test - Prueba de conectividad`);
+    console.log(`   POST /api/upload-pdf - Cargar PDF MAPA`);
+    console.log(`   POST /api/actualizar-mediciones - Actualizar mediciones`);
+    console.log(`   POST /api/generar-informe - Generar y descargar informe Word`);
+    console.log(`   GET  /api/instituciones - Listar instituciones`);
+  });
+}
 
-app.listen(PORT, () => {
-  console.log(`🚀 Informatron API iniciado`);
-  console.log(`📡 Servidor escuchando en http://localhost:${PORT}`);
-  console.log(`📋 Endpoints disponibles:`);
-  console.log(`   GET  / - Información de la API`);
-  console.log(`   GET  /test - Prueba de conectividad`);
-  console.log(`   POST /api/upload-pdf - Cargar PDF MAPA`);
-  console.log(`   POST /api/actualizar-mediciones - Actualizar mediciones`);
-  console.log(`   POST /api/generar-informe - Generar y descargar informe Word`);
-});
+if (require.main === module) {
+  startServer();
+}
+
+module.exports = { app, startServer };

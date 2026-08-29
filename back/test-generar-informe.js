@@ -38,7 +38,7 @@ async function probarGeneracionInforme(rutaPDF, institucionId) {
     
     // 4. Generar el informe
     console.log('\n📄 Paso 4: Generando informe Word...');
-    const rutaInforme = generarYGuardarInforme(paciente, institucionId);
+    const rutaInforme = await generarYGuardarInforme(paciente, institucionId);
     
     console.log('\n' + '='.repeat(80));
     console.log('✅ PRUEBA COMPLETADA EXITOSAMENTE');
