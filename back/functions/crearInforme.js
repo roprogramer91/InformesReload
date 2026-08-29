@@ -13,8 +13,8 @@ const { validarEstudioCompleto } = require('../config/config');
 const institutionService = require('../services/institutionService');
 
 const PLANTILLAS_INSUFICIENTES = {
-  consultoriosMedicos: 'PlantillaFaltaInfo-CM.docx',
-  vitalNorte: 'PlantillaFaltaInfo-VN.docx',
+  'PlantillaA.docx': 'PlantillaFaltaInfo-CM.docx',
+  'PlantillaB.docx': 'PlantillaFaltaInfo-VN.docx',
 };
 
 /**
@@ -58,7 +58,7 @@ async function generarInforme(paciente, institucionId) {
       console.log(`   - Plantilla: ${plantillaAUsar}`);
     } else {
       // Estudio insuficiente: usar plantilla "FaltaInfo"
-      plantillaAUsar = PLANTILLAS_INSUFICIENTES[institucion.name] || institucion.template;
+      plantillaAUsar = PLANTILLAS_INSUFICIENTES[institucion.template] || institucion.template;
       console.log(`⚠️  Estudio INSUFICIENTE - Motivos:`);
       validacion.motivos.forEach(motivo => console.log(`   - ${motivo}`));
       console.log(`   - Plantilla: ${plantillaAUsar}`);

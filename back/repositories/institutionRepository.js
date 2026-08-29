@@ -7,11 +7,15 @@ class InstitutionRepository {
     throw new Error('InstitutionRepository.findByName() no implementado');
   }
 
+  async findById(_id) {
+    throw new Error('InstitutionRepository.findById() no implementado');
+  }
+
   async create(_data) {
     throw new Error('InstitutionRepository.create() no implementado');
   }
 
-  async update(_name, _data) {
+  async update(_id, _data) {
     throw new Error('InstitutionRepository.update() no implementado');
   }
 

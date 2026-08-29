@@ -5,14 +5,14 @@ const PizZip = require('pizzip');
 const institutionService = require('../services/institutionService');
 
 const CARATULAS = {
-  consultoriosMedicos: 'CaratulaA.docx',
-  darmed: 'CaratulaC.docx',
-  institutoDelta: 'CaratulaD.docx'
+  'PlantillaA.docx': 'CaratulaA.docx',
+  'PlantillaC.docx': 'CaratulaC.docx',
+  'PlantillaD.docx': 'CaratulaD.docx'
 };
 
 async function institucionTieneCaratula(institucionId) {
   const institution = await institutionService.getByName(institucionId);
-  return !!institution?.hasCover && !!CARATULAS[institucionId];
+  return !!institution?.hasCover && !!CARATULAS[institution.template];
 }
 
 async function generarCaratulaDocx(nombre, institucionId) {
@@ -20,7 +20,7 @@ async function generarCaratulaDocx(nombre, institucionId) {
   if (!institution?.hasCover) {
     throw new Error(`La institución ${institucionId} no tiene carátula`);
   }
-  const archivo = CARATULAS[institucionId];
+  const archivo = CARATULAS[institution.template];
   if (!archivo) throw new Error(`La institución ${institucionId} no tiene carátula`);
 
   const plantillaPath = path.join(__dirname, '../templates', archivo);

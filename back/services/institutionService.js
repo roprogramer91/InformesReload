@@ -17,6 +17,11 @@ class InstitutionService {
     return this.repository.findByName(name);
   }
 
+  getById(id) {
+    if (!id || typeof id !== 'string') return null;
+    return this.repository.findById(id);
+  }
+
   async create(input) {
     const data = this.validate(input, { creating: true });
     const existing = await this.repository.findByName(data.name);
@@ -24,15 +29,21 @@ class InstitutionService {
     return this.repository.create(data);
   }
 
-  async update(name, input) {
-    if (!name || typeof name !== 'string') {
-      throw this.error('El nombre de la institución es obligatorio', 400);
+  async update(id, input) {
+    if (!id || typeof id !== 'string') {
+      throw this.error('El ID de la institución es obligatorio', 400);
     }
-    const existing = await this.repository.findByName(name);
-    if (!existing) throw this.error(`Institución no encontrada: ${name}`, 404);
+    const existing = await this.repository.findById(id);
+    if (!existing) throw this.error(`Institución no encontrada: ${id}`, 404);
 
     const data = this.validate(input, { creating: false });
-    return this.repository.update(name, data);
+    if (data.name && data.name !== existing.name) {
+      const institutionWithSameName = await this.repository.findByName(data.name);
+      if (institutionWithSameName) {
+        throw this.error(`La institución ${data.name} ya existe`, 409);
+      }
+    }
+    return this.repository.update(id, data);
   }
 
   validate(input, { creating }) {
@@ -57,7 +68,10 @@ class InstitutionService {
       data.template = input.template.trim();
     } else {
       if (Object.prototype.hasOwnProperty.call(input, 'name')) {
-        throw this.error('El nombre funciona como clave y no puede editarse en esta versión', 400);
+        if (typeof input.name !== 'string' || !input.name.trim()) {
+          throw this.error('El nombre de la institución no puede estar vacío', 400);
+        }
+        data.name = input.name.trim();
       }
       if (Object.prototype.hasOwnProperty.call(input, 'template')) {
         if (typeof input.template !== 'string' || !input.template.trim()) {

@@ -582,7 +582,7 @@ Este plan aún no está autorizado para ejecución.
 - [x] Completar protección de la base SQLite local, `.env` y archivos auxiliares.
 - [x] Definir contrato Repository y separar repositorio, servicio y rutas.
 - [x] Crear el esqueleto mínimo persistente de instituciones.
-- [x] Centralizar en el backend la lectura de instituciones manteniendo los nombres actuales como claves.
+- [x] Centralizar en el backend la lectura de instituciones manteniendo los nombres actuales como identificadores funcionales de compatibilidad.
 - [ ] Agregar entrada visual aislada para el Gestor.
 - [x] Mantener intactos los flujos actuales cubiertos por las pruebas sintéticas.
 - [x] Documentar pruebas locales de esta rama.
@@ -602,9 +602,9 @@ Este plan aún no está autorizado para ejecución.
 > Alcance adelantado y autorizado dentro de `feature/instituciones-v1`: sólo endpoints backend mínimos de listado, creación y edición. La administración visual y el resto de la Fase 2 permanecen pendientes.
 
 - [x] Crear endpoint backend de listado desde una fuente única.
-- [ ] Crear institución con ID estable.
-- [x] Crear institución usando temporalmente `name` como clave primaria.
-- [x] Editar institución mediante endpoint backend sin cambiar `name`.
+- [x] Crear institución con ID estable.
+- [x] Mantener `name` como campo editable y único, separado de la identidad estable.
+- [x] Editar institución mediante endpoint backend identificado por `id`.
 - [ ] Activar/desactivar.
 - [ ] Validar duplicados y configuración incompleta.
 - [x] Validar duplicados y los campos mínimos autorizados.
@@ -856,7 +856,7 @@ Este plan aún no está autorizado para ejecución.
 
 **Motivo:** Permite incorporar persistencia mínima ahora sin acoplar rutas o servicios a la base que será reemplazada más adelante.
 
-**Consecuencias:** Sólo el adaptador Prisma y el esquema conocen SQLite. La futura migración a PostgreSQL deberá implementar el mismo contrato. `name` funciona temporalmente como clave primaria; los IDs estables se incorporarán de forma incremental después de esta rama.
+**Consecuencias:** Sólo el adaptador Prisma y el esquema conocen SQLite. La futura migración a PostgreSQL deberá implementar el mismo contrato. Cada institución posee un `id` estable; `name` es editable y único. El modelo registra además `createdAt` y `updatedAt`.
 
 ## 2026-08-29 — Separar procesamiento interno de salidas externas
 
@@ -963,7 +963,7 @@ Este plan aún no está autorizado para ejecución.
 
 - [x] Prueba: Endpoints mínimos de instituciones.
   - Resultado: `GET`, `POST` y `PUT` pasaron con una base SQLite temporal aislada.
-  - Observaciones: Se probaron listado, creación y edición sin cambio de clave.
+  - Observaciones: Se probaron listado, creación, edición por ID estable, cambio de nombre y rechazo de nombres duplicados.
 
 - [x] Prueba: Compatibilidad de generación por institución.
   - Resultado: Las cuatro plantillas generaron buffers DOCX válidos con un paciente completamente sintético.
@@ -1007,7 +1007,8 @@ Una fase sólo termina cuando:
 - [x] Se autorizó el inicio acotado de la Fase 1.
 - [x] Se creó `feature/instituciones-v1` desde `dev` sin modificar producción.
 - [x] Se incorporó Prisma con SQLite detrás del patrón Repository.
-- [x] Se creó el modelo mínimo `Institution` con `name` como clave temporal.
+- [x] Se creó el modelo mínimo `Institution` y luego se incorporó `id` estable como clave primaria.
+- [x] Se dejó `name` como campo editable y único, y se agregaron `createdAt` y `updatedAt`.
 - [x] Se agregaron seed y endpoints backend de listado, creación y edición.
 - [x] Se migró la lectura backend desde el objeto institucional hardcodeado hacia la base local.
 - [x] Se mantuvo el frontend sin cambios y no se activaron reglas de DNI.

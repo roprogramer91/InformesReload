@@ -78,13 +78,18 @@ test('crea una institución con el modelo mínimo', async () => {
   assert.equal(response.status, 201);
   assert.equal(body.success, true);
   assert.equal(body.data.name, 'institucionPrueba');
+  assert.equal(typeof body.data.id, 'string');
+  assert.ok(body.data.id.length > 0);
+  assert.ok(body.data.createdAt);
+  assert.ok(body.data.updatedAt);
 });
 
-test('edita una institución sin permitir cambiar su clave name', async () => {
-  const response = await fetch(`${baseUrl}/api/instituciones/institucionPrueba`, {
+test('edita el nombre de una institución conservando su ID estable', async () => {
+  const created = await institutionService.getByName('institucionPrueba');
+  const response = await fetch(`${baseUrl}/api/instituciones/${created.id}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ active: false, hasCover: true }),
+    body: JSON.stringify({ name: 'institucionRenombrada', active: false, hasCover: true }),
   });
   const body = await response.json();
 
@@ -92,7 +97,21 @@ test('edita una institución sin permitir cambiar su clave name', async () => {
   assert.equal(body.success, true);
   assert.equal(body.data.active, false);
   assert.equal(body.data.hasCover, true);
-  assert.equal(body.data.name, 'institucionPrueba');
+  assert.equal(body.data.id, created.id);
+  assert.equal(body.data.name, 'institucionRenombrada');
+});
+
+test('rechaza nombres duplicados al editar', async () => {
+  const renamed = await institutionService.getByName('institucionRenombrada');
+  const response = await fetch(`${baseUrl}/api/instituciones/${renamed.id}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name: 'darmed' }),
+  });
+  const body = await response.json();
+
+  assert.equal(response.status, 409);
+  assert.equal(body.success, false);
 });
 
 test('mantiene generación y carátulas para las cuatro instituciones', async () => {
@@ -116,15 +135,27 @@ test('mantiene generación y carátulas para las cuatro instituciones', async ()
   };
 
   for (const [name, _template, hasCover] of initialInstitutions) {
-    const report = await generarInforme(paciente, name);
+    let functionalName = name;
+    let renamedInstitution;
+    if (name === 'darmed') {
+      const institution = await institutionService.getByName(name);
+      renamedInstitution = await institutionService.update(institution.id, { name: 'darmedRenombrada' });
+      functionalName = renamedInstitution.name;
+    }
+
+    const report = await generarInforme(paciente, functionalName);
     assert.ok(Buffer.isBuffer(report));
     assert.ok(report.length > 0);
-    assert.equal(await institucionTieneCaratula(name), hasCover);
+    assert.equal(await institucionTieneCaratula(functionalName), hasCover);
 
     if (hasCover) {
-      const cover = await generarCaratulaDocx(paciente.nombre, name);
+      const cover = await generarCaratulaDocx(paciente.nombre, functionalName);
       assert.ok(Buffer.isBuffer(cover));
       assert.ok(cover.length > 0);
+    }
+
+    if (renamedInstitution) {
+      await institutionService.update(renamedInstitution.id, { name });
     }
   }
 });

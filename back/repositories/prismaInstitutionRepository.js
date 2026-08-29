@@ -19,24 +19,32 @@ class PrismaInstitutionRepository extends InstitutionRepository {
     return this.prisma.institution.findUnique({ where: { name } });
   }
 
+  findById(id) {
+    return this.prisma.institution.findUnique({ where: { id } });
+  }
+
   create(data) {
     return this.prisma.institution.create({ data });
   }
 
-  update(name, data) {
-    return this.prisma.institution.update({ where: { name }, data });
+  update(id, data) {
+    return this.prisma.institution.update({ where: { id }, data });
   }
 
   initializeSchemaForTests() {
     return this.prisma.$executeRawUnsafe(`
       CREATE TABLE IF NOT EXISTS "Institution" (
-        "name" TEXT NOT NULL PRIMARY KEY,
+        "id" TEXT NOT NULL PRIMARY KEY,
+        "name" TEXT NOT NULL,
         "active" BOOLEAN NOT NULL DEFAULT true,
         "template" TEXT NOT NULL,
         "hasCover" BOOLEAN NOT NULL DEFAULT false,
         "dniRequired" BOOLEAN NOT NULL DEFAULT false,
-        "showDni" BOOLEAN NOT NULL DEFAULT false
-      )
+        "showDni" BOOLEAN NOT NULL DEFAULT false,
+        "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        "updatedAt" DATETIME NOT NULL
+      );
+      CREATE UNIQUE INDEX IF NOT EXISTS "Institution_name_key" ON "Institution"("name")
     `);
   }
 

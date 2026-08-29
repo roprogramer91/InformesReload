@@ -40,7 +40,7 @@ async function seed() {
     const existing = await institutionService.getByName(institution.name);
     if (existing) {
       const { name, ...editableFields } = institution;
-      await institutionService.update(name, editableFields);
+      await institutionService.update(existing.id, editableFields);
     } else {
       await institutionService.create(institution);
     }

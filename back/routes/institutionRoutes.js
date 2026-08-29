@@ -21,9 +21,9 @@ router.post('/instituciones', async (req, res) => {
   }
 });
 
-router.put('/instituciones/:name', async (req, res) => {
+router.put('/instituciones/:id', async (req, res) => {
   try {
-    const institution = await institutionService.update(req.params.name, req.body);
+    const institution = await institutionService.update(req.params.id, req.body);
     res.json({ success: true, data: institution });
   } catch (error) {
     sendError(res, error);
