@@ -84,6 +84,7 @@ async function generarInforme(paciente, institucionId) {
     const datos = {
       // Datos básicos
       NOMBRE: paciente.nombre || '',
+      DNI: paciente.dni || '',
       EDAD: paciente.edad || '',
       FECHA: paciente.fechaFormateada || '',
       HORAS: paciente.duracionHoras || '',
@@ -114,6 +115,7 @@ async function generarInforme(paciente, institucionId) {
       // Clasificación de presión arterial
       PRESION_ARTERIAL: paciente.clasificacionPA || '',
     };
+
     
     console.log('✅ Datos mapeados a plantilla');
     

@@ -15,6 +15,7 @@ model Institution {
   hasCover    Boolean @default(false)
   dniRequired Boolean @default(false)
   showDni     Boolean @default(false)
+  dniMode     String   @default("OPTIONAL")
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }

@@ -2,6 +2,7 @@ const { before, after, test } = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
+const PizZip = require('pizzip');
 
 const BACK_DIR = path.resolve(__dirname, '..');
 const TEST_DB_PATH = path.join(BACK_DIR, 'prisma', 'institutions-test.db');
@@ -10,23 +11,25 @@ process.env.DATABASE_URL = 'file:./institutions-test.db';
 const { startServer } = require('../index');
 const institutionService = require('../services/institutionService');
 const { generarInforme } = require('../functions/crearInforme');
+const { construirPacienteDesdeAwpBuffer } = require('../functions/parseAwp');
+const { resolverDniPaciente } = require('../services/dniService');
 const { institucionTieneCaratula, generarCaratulaDocx } = require('../functions/generarCaratula');
 
 let server;
 let baseUrl;
 
 const initialInstitutions = [
-  ['consultoriosMedicos', 'PlantillaA.docx', true, false],
-  ['vitalNorte', 'PlantillaB.docx', false, true],
-  ['darmed', 'PlantillaC.docx', true, false],
-  ['institutoDelta', 'PlantillaD.docx', true, false],
+  ['consultoriosMedicos', 'PlantillaA.docx', true, false, 'OPTIONAL'],
+  ['vitalNorte', 'PlantillaB.docx', false, true, 'AWP'],
+  ['darmed', 'PlantillaC.docx', true, false, 'MANUAL'],
+  ['institutoDelta', 'PlantillaD.docx', true, false, 'MANUAL'],
 ];
 
 before(async () => {
   removeTestDatabase();
   await institutionService.repository.initializeSchemaForTests();
 
-  for (const [name, template, hasCover, dniRequired] of initialInstitutions) {
+  for (const [name, template, hasCover, dniRequired, dniMode] of initialInstitutions) {
     await institutionService.create({
       name,
       active: true,
@@ -34,6 +37,7 @@ before(async () => {
       hasCover,
       dniRequired,
       showDni: false,
+      dniMode,
     });
   }
 
@@ -58,6 +62,41 @@ test('lista las cuatro instituciones iniciales', async () => {
     body.data.map(institution => institution.name).sort(),
     initialInstitutions.map(([name]) => name).sort()
   );
+  assert.deepEqual(
+    Object.fromEntries(body.data.map(institution => [institution.name, institution.dniMode])),
+    {
+      consultoriosMedicos: 'OPTIONAL',
+      darmed: 'MANUAL',
+      institutoDelta: 'MANUAL',
+      vitalNorte: 'AWP',
+    }
+  );
+});
+
+test('extrae ID Paciente desde PATIENTDATA', () => {
+  const awp = Buffer.from([
+    '[PATIENTDATA]',
+    'Name=PACIENTE SINTETICO',
+    'ID=30111222',
+    'Age=50',
+    'ABPMCount=0',
+    '[ABPMDATA]',
+  ].join('\r\n'), 'latin1');
+
+  const paciente = construirPacienteDesdeAwpBuffer(awp);
+
+  assert.equal(paciente.dni, '30111222');
+});
+
+test('resuelve el DNI según la configuración institucional', async () => {
+  assert.equal(await resolverDniPaciente('vitalNorte', '30111222', '99999999'), '30111222');
+  assert.equal(await resolverDniPaciente('darmed', '30111222', '28999888'), '28999888');
+  assert.equal(await resolverDniPaciente('consultoriosMedicos', '30111222', ''), '30111222');
+  assert.equal(await resolverDniPaciente('consultoriosMedicos', '', '27666777'), '27666777');
+  await assert.rejects(
+    resolverDniPaciente('institutoDelta', '30111222', ''),
+    error => error.code === 'DNI_MANUAL_REQUIRED' && error.statusCode === 400
+  );
 });
 
 test('crea una institución con el modelo mínimo', async () => {
@@ -71,6 +110,7 @@ test('crea una institución con el modelo mínimo', async () => {
       hasCover: false,
       dniRequired: false,
       showDni: false,
+      dniMode: 'MANUAL',
     }),
   });
   const body = await response.json();
@@ -78,6 +118,7 @@ test('crea una institución con el modelo mínimo', async () => {
   assert.equal(response.status, 201);
   assert.equal(body.success, true);
   assert.equal(body.data.name, 'institucionPrueba');
+  assert.equal(body.data.dniMode, 'MANUAL');
   assert.equal(typeof body.data.id, 'string');
   assert.ok(body.data.id.length > 0);
   assert.ok(body.data.createdAt);
@@ -117,6 +158,7 @@ test('rechaza nombres duplicados al editar', async () => {
 test('mantiene generación y carátulas para las cuatro instituciones', async () => {
   const paciente = {
     nombre: 'PACIENTE SINTETICO',
+    dni: '30111222',
     edad: 50,
     fechaFormateada: '29/08/2026',
     duracionHoras: 24,
@@ -146,6 +188,8 @@ test('mantiene generación y carátulas para las cuatro instituciones', async ()
     const report = await generarInforme(paciente, functionalName);
     assert.ok(Buffer.isBuffer(report));
     assert.ok(report.length > 0);
+    const documentXml = new PizZip(report).file('word/document.xml').asText();
+    assert.match(documentXml, /30111222/);
     assert.equal(await institucionTieneCaratula(functionalName), hasCover);
 
     if (hasCover) {

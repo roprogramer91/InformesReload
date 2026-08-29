@@ -1,7 +1,8 @@
 const PrismaInstitutionRepository = require('../repositories/prismaInstitutionRepository');
 
-const FIELDS = ['name', 'active', 'template', 'hasCover', 'dniRequired', 'showDni'];
+const FIELDS = ['name', 'active', 'template', 'hasCover', 'dniRequired', 'showDni', 'dniMode'];
 const BOOLEAN_FIELDS = ['active', 'hasCover', 'dniRequired', 'showDni'];
+const DNI_MODES = ['AWP', 'MANUAL', 'OPTIONAL'];
 
 class InstitutionService {
   constructor(repository) {
@@ -79,6 +80,15 @@ class InstitutionService {
         }
         data.template = input.template.trim();
       }
+    }
+
+    if (Object.prototype.hasOwnProperty.call(input, 'dniMode')) {
+      if (typeof input.dniMode !== 'string' || !DNI_MODES.includes(input.dniMode.toUpperCase())) {
+        throw this.error(`dniMode debe ser uno de: ${DNI_MODES.join(', ')}`, 400);
+      }
+      data.dniMode = input.dniMode.toUpperCase();
+    } else if (creating) {
+      data.dniMode = 'OPTIONAL';
     }
 
     for (const field of BOOLEAN_FIELDS) {

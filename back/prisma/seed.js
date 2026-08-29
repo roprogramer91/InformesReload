@@ -8,6 +8,7 @@ const INITIAL_INSTITUTIONS = [
     hasCover: true,
     dniRequired: false,
     showDni: false,
+    dniMode: 'OPTIONAL',
   },
   {
     name: 'vitalNorte',
@@ -16,6 +17,7 @@ const INITIAL_INSTITUTIONS = [
     hasCover: false,
     dniRequired: true,
     showDni: false,
+    dniMode: 'AWP',
   },
   {
     name: 'darmed',
@@ -24,6 +26,7 @@ const INITIAL_INSTITUTIONS = [
     hasCover: true,
     dniRequired: false,
     showDni: false,
+    dniMode: 'MANUAL',
   },
   {
     name: 'institutoDelta',
@@ -32,6 +35,7 @@ const INITIAL_INSTITUTIONS = [
     hasCover: true,
     dniRequired: false,
     showDni: false,
+    dniMode: 'MANUAL',
   },
 ];
 

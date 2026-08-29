@@ -623,6 +623,7 @@ Este plan aún no está autorizado para ejecución.
 
 - [ ] Implementar capacidades configurables.
 - [ ] Implementar reglas configurables.
+- [x] Implementar `dniMode` por institución con resolución `AWP`, `MANUAL` u `OPTIONAL`.
 - [ ] Implementar `revision_modo` con valores `siempre`, `opcional` y `nunca`.
 - [ ] Implementar bloqueo de salida por errores críticos en todos los modos.
 - [ ] Evitar condicionales por nombre de institución.
@@ -1012,3 +1013,5 @@ Una fase sólo termina cuando:
 - [x] Se agregaron seed y endpoints backend de listado, creación y edición.
 - [x] Se migró la lectura backend desde el objeto institucional hardcodeado hacia la base local.
 - [x] Se mantuvo el frontend sin cambios y no se activaron reglas de DNI.
+- [x] Se incorporó `dniMode`: Vital Norte `AWP`, DarMed e Instituto Delta `MANUAL`, Consultorios Médicos `OPTIONAL`.
+- [x] Se agregó el diálogo manual condicionado por `dniMode` y se mantuvo la decisión validada también en backend.

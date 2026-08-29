@@ -7,6 +7,7 @@ const router = express.Router();
 const { generarInforme } = require('../functions/crearInforme');
 const { validarEstudioCompleto, HORAS_MINIMAS_ESTUDIO } = require('../config/config');
 const { convertirDocxAPdf } = require('../functions/convertirPDF');
+const { resolverDniPaciente } = require('../services/dniService');
 
 /**
  * POST /api/generar-informe
@@ -20,7 +21,7 @@ const { convertirDocxAPdf } = require('../functions/convertirPDF');
  */
 router.post('/generar-informe', async (req, res) => {
   try {
-    const { paciente, institucionId } = req.body;
+    const { paciente, institucionId, dniManual } = req.body;
     
     // Validar que se recibieron los datos necesarios
     if (!paciente) {
@@ -36,6 +37,8 @@ router.post('/generar-informe', async (req, res) => {
         message: 'No se recibió el ID de la institución'
       });
     }
+
+    paciente.dni = await resolverDniPaciente(institucionId, paciente.dni, dniManual);
     
     // Validar que el paciente tenga mediciones
     if (!paciente.medicionesDiurnas || !paciente.medicionesNocturnas) {
@@ -82,10 +85,10 @@ router.post('/generar-informe', async (req, res) => {
     
   } catch (error) {
     console.error('❌ Error al generar informe:', error);
-    res.status(500).json({
+    res.status(error.statusCode || 500).json({
       success: false,
-      message: 'Error al generar el informe',
-      error: error.message
+      message: error.message,
+      code: error.code
     });
   }
 });

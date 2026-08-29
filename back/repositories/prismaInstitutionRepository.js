@@ -41,6 +41,7 @@ class PrismaInstitutionRepository extends InstitutionRepository {
         "hasCover" BOOLEAN NOT NULL DEFAULT false,
         "dniRequired" BOOLEAN NOT NULL DEFAULT false,
         "showDni" BOOLEAN NOT NULL DEFAULT false,
+        "dniMode" TEXT NOT NULL DEFAULT 'OPTIONAL',
         "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
         "updatedAt" DATETIME NOT NULL
       );
