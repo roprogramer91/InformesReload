@@ -978,6 +978,10 @@ Este plan aún no está autorizado para ejecución.
   - Resultado: Sin errores.
   - Observaciones: Validación ejecutada con `node --check`.
 
+- [x] Prueba: Modos de captura de DNI por institución.
+  - Resultado: Suite automatizada 7/7 aprobada y validación manual satisfactoria de DNI automático desde AWP y DNI ingresado manualmente.
+  - Observaciones: Consultorios Médicos usa `OPTIONAL`, Vital Norte `AWP`, DarMed e Instituto Delta `MANUAL`; no quedaron trazas temporales con datos de pacientes.
+
 # Definition of Done general
 
 Una fase sólo termina cuando:
@@ -1015,3 +1019,4 @@ Una fase sólo termina cuando:
 - [x] Se mantuvo el frontend sin cambios y no se activaron reglas de DNI.
 - [x] Se incorporó `dniMode`: Vital Norte `AWP`, DarMed e Instituto Delta `MANUAL`, Consultorios Médicos `OPTIONAL`.
 - [x] Se agregó el diálogo manual condicionado por `dniMode` y se mantuvo la decisión validada también en backend.
+- [x] Se validaron manualmente los flujos de DNI automático y manual antes de preparar la integración a `dev`.
