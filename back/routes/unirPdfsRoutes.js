@@ -39,9 +39,9 @@ router.post('/unir-pdfs', upload.fields([
     const merged = await PDFDocument.create();
 
     // 1. Si la institución tiene carátula, generarla y agregarla primero
-    if (institucionTieneCaratula(institucionId)) {
+    if (await institucionTieneCaratula(institucionId)) {
       console.log('📋 Generando carátula...');
-      const caratulaDocx = generarCaratulaDocx(nombrePaciente, institucionId);
+      const caratulaDocx = await generarCaratulaDocx(nombrePaciente, institucionId);
       const { buffer: caratulaPdf } = convertirDocxAPdf(caratulaDocx);
       const docCaratula = await PDFDocument.load(caratulaPdf);
       const pagesCaratula = await merged.copyPages(docCaratula, docCaratula.getPageIndices());

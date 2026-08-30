@@ -1,1 +1,6 @@
 /back/node_modules/
+/back/.env
+/back/prisma/*.db
+/back/prisma/*.db-journal
+/back/prisma/*.db-shm
+/back/prisma/*.db-wal

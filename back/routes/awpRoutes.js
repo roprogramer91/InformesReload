@@ -3,6 +3,7 @@ const router = express.Router();
 const multer = require('multer');
 const { construirPacienteDesdeAwpBuffer } = require('../functions/parseAwp');
 const { generarInforme } = require('../functions/crearInforme');
+const { resolverDniPaciente } = require('../services/dniService');
 const { convertirDocxAPdf } = require('../functions/convertirPDF');
 const { validarEstudioCompleto, HORAS_MINIMAS_ESTUDIO } = require('../config/config');
 
@@ -34,6 +35,7 @@ router.post('/inspeccionar-awp', upload.single('awpFile'), (req, res) => {
       success: true,
       data: {
         nombre: paciente.nombre || req.file.originalname.replace(/\.awp$/i, ''),
+        dni: paciente.dni || '',
         fechaDetectada: paciente.fechaPrimeraMedicion || paciente.fechaFormateada,
         fechaAdministrativa: paciente.fechaAdministrativa || ''
       }
@@ -68,6 +70,11 @@ router.post('/procesar-awp', upload.single('awpFile'), async (req, res) => {
     }
 
     const paciente = construirPacienteDesdeAwpBuffer(req.file.buffer, { fechaCorregida });
+    paciente.dni = await resolverDniPaciente(
+      institucionId,
+      paciente.dni,
+      req.body.dniManual
+    );
 
     console.log('👤 Paciente:', paciente.nombre, '| Diurnas:', paciente.medicionesDiurnas, '| Nocturnas:', paciente.medicionesNocturnas);
 
@@ -88,7 +95,7 @@ router.post('/procesar-awp', upload.single('awpFile'), async (req, res) => {
       });
     }
 
-    const docxBuffer = generarInforme(paciente, institucionId);
+    const docxBuffer = await generarInforme(paciente, institucionId);
     const { buffer, tipo } = convertirDocxAPdf(docxBuffer);
 
     const nombreArchivo = `${paciente.nombre}.${tipo}`;
@@ -102,7 +109,11 @@ router.post('/procesar-awp', upload.single('awpFile'), async (req, res) => {
 
   } catch (error) {
     console.error('❌ Error al procesar AWP:', error);
-    res.status(500).json({ success: false, message: 'Error al procesar el archivo AWP', error: error.message });
+    res.status(error.statusCode || 500).json({
+      success: false,
+      message: error.message,
+      code: error.code
+    });
   }
 });
 

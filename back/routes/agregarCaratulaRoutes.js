@@ -26,7 +26,7 @@ router.post('/agregar-caratula', upload.single('pdfFile'), async (req, res) => {
     if (!institucionId) {
       return res.status(400).json({ success: false, message: 'Se requiere el ID de institución' });
     }
-    if (!institucionTieneCaratula(institucionId)) {
+    if (!(await institucionTieneCaratula(institucionId))) {
       return res.status(400).json({ success: false, message: `La institución ${institucionId} no tiene carátula` });
     }
 
@@ -36,7 +36,7 @@ router.post('/agregar-caratula', upload.single('pdfFile'), async (req, res) => {
     const merged = await PDFDocument.create();
 
     // 1. Generar carátula y agregarla primero
-    const caratulaDocx = generarCaratulaDocx(nombrePaciente, institucionId);
+    const caratulaDocx = await generarCaratulaDocx(nombrePaciente, institucionId);
     const { buffer: caratulaPdf } = convertirDocxAPdf(caratulaDocx);
     const docCaratula = await PDFDocument.load(caratulaPdf);
     const pagesCaratula = await merged.copyPages(docCaratula, docCaratula.getPageIndices());

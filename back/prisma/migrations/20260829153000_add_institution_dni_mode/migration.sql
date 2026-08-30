@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE "Institution" ADD COLUMN "dniMode" TEXT NOT NULL DEFAULT 'OPTIONAL';

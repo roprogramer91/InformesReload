@@ -45,6 +45,7 @@ function construirPacienteDesdeAwpBuffer(buffer, opciones = {}) {
   const ab = data['ABPMDATA'] || {};
 
   const nombre = pd['Name'] || '';
+  const dni = pd['ID'] || pd['PatientID'] || '';
   const edad = parseInt(pd['Age']) || 0;
 
   const yearAdministrativo = parseInt(pd['YearBegin']);
@@ -135,8 +136,9 @@ function construirPacienteDesdeAwpBuffer(buffer, opciones = {}) {
     clasificacionPA: clasificacion
   });
 
-  return {
+  const paciente = {
     nombre,
+    dni,
     edad,
     fechaFormateada,
     fechaPrimeraMedicion,
@@ -160,6 +162,8 @@ function construirPacienteDesdeAwpBuffer(buffer, opciones = {}) {
     medicionesNocturnas: dormido.length,
     totalMediciones:     validas.length
   };
+
+  return paciente;
 }
 
 module.exports = { construirPacienteDesdeAwpBuffer };

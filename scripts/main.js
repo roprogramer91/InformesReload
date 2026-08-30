@@ -7,14 +7,70 @@
 // CONFIGURACIÓN
 // =====================================================
 
-const _isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-const _isDev = new URLSearchParams(window.location.search).has('dev');
+const _isLocal =
+  window.location.protocol === "file:" ||
+  window.location.hostname === "localhost" ||
+  window.location.hostname === "127.0.0.1";
+const _isDev = new URLSearchParams(window.location.search).has("dev");
 
-const API_BASE_URL = !_isLocal
-  ? 'https://informesreload-production.up.railway.app'
+const API_BASE_URL = _isLocal
+  ? "http://localhost:3000"
   : _isDev
-    ? 'https://informesreload-dev-entorno.up.railway.app'
-    : 'http://localhost:3000';
+    ? "https://informesreload-dev-entorno.up.railway.app"
+    : "https://informesreload-production.up.railway.app";
+
+let institutionsPromise;
+
+async function obtenerInstitucion(nombre) {
+  if (!institutionsPromise) {
+    institutionsPromise = fetch(`${API_BASE_URL}/api/instituciones`)
+      .then(async (response) => {
+        const result = await response.json();
+        if (!response.ok || !result.success) {
+          throw new Error(result.message || "No se pudo cargar la configuración institucional");
+        }
+        return result.data;
+      })
+      .catch((error) => {
+        institutionsPromise = null;
+        throw error;
+      });
+  }
+
+  const institutions = await institutionsPromise;
+  const institution = institutions.find((item) => item.name === nombre);
+  if (!institution) throw new Error(`Institución no encontrada: ${nombre}`);
+  return institution;
+}
+
+async function solicitarDniManualSiCorresponde(institucionNombre, dniAwp = "") {
+  const institution = await obtenerInstitucion(institucionNombre);
+  const dniDisponible = String(dniAwp || "").trim();
+  const requiereDialogo =
+    institution.dniMode === "MANUAL" ||
+    (institution.dniMode === "OPTIONAL" && !dniDisponible);
+
+  if (!requiereDialogo) return "";
+
+  const dniManual = window.prompt("Ingresá el DNI del paciente:", "");
+  if (dniManual === null) throw new Error("Ingreso de DNI cancelado");
+  if (!dniManual.trim()) throw new Error("El DNI no puede estar vacío");
+  return dniManual.trim();
+}
+
+async function inspeccionarDniAwp(file) {
+  const formData = new FormData();
+  formData.append("awpFile", file);
+  const response = await fetch(`${API_BASE_URL}/api/inspeccionar-awp`, {
+    method: "POST",
+    body: formData,
+  });
+  const result = await response.json();
+  if (!response.ok || !result.success) {
+    throw new Error(result.message || `Error ${response.status}`);
+  }
+  return result.data.dni || "";
+}
 
 // Estado global de la aplicación
 const appState = {
@@ -23,7 +79,7 @@ const appState = {
   institucionNombre: null,
   pdfFile: null,
   pacienteData: null,
-  medicionesActualizadas: false
+  medicionesActualizadas: false,
 };
 
 // =====================================================
@@ -31,41 +87,41 @@ const appState = {
 // =====================================================
 
 // Pasos del wizard
-const steps = document.querySelectorAll('.wizard-step');
-const progressSteps = document.querySelectorAll('.progress-step');
+const steps = document.querySelectorAll(".wizard-step");
+const progressSteps = document.querySelectorAll(".progress-step");
 
 // Paso 1: Institución
-const institutionCards = document.querySelectorAll('.institution-card');
-const btnStep1 = document.getElementById('btn-step-1');
+const institutionCards = document.querySelectorAll(".institution-card");
+const btnStep1 = document.getElementById("btn-step-1");
 
 // Paso 2: PDF
-const uploadArea = document.getElementById('upload-area');
-const pdfInput = document.getElementById('pdf-input');
-const fileInfo = document.getElementById('file-info');
-const fileName = document.getElementById('file-name');
-const fileSize = document.getElementById('file-size');
-const btnRemoveFile = document.getElementById('btn-remove-file');
-const loadingPdf = document.getElementById('loading-pdf');
-const btnBack2 = document.getElementById('btn-back-2');
-const btnStep2 = document.getElementById('btn-step-2');
+const uploadArea = document.getElementById("upload-area");
+const pdfInput = document.getElementById("pdf-input");
+const fileInfo = document.getElementById("file-info");
+const fileName = document.getElementById("file-name");
+const fileSize = document.getElementById("file-size");
+const btnRemoveFile = document.getElementById("btn-remove-file");
+const loadingPdf = document.getElementById("loading-pdf");
+const btnBack2 = document.getElementById("btn-back-2");
+const btnStep2 = document.getElementById("btn-step-2");
 
 // Paso 3: Mediciones
-const patientName = document.getElementById('patient-name');
-const patientAge = document.getElementById('patient-age');
-const medicionesDiurnas = document.getElementById('mediciones-diurnas');
-const medicionesNocturnas = document.getElementById('mediciones-nocturnas');
-const btnBack3 = document.getElementById('btn-back-3');
-const btnStep3 = document.getElementById('btn-step-3');
+const patientName = document.getElementById("patient-name");
+const patientAge = document.getElementById("patient-age");
+const medicionesDiurnas = document.getElementById("mediciones-diurnas");
+const medicionesNocturnas = document.getElementById("mediciones-nocturnas");
+const btnBack3 = document.getElementById("btn-back-3");
+const btnStep3 = document.getElementById("btn-step-3");
 
 // Paso 4: Generación
-const summaryName = document.getElementById('summary-name');
-const summaryAge = document.getElementById('summary-age');
-const summaryInstitution = document.getElementById('summary-institution');
-const summaryDiurnas = document.getElementById('summary-diurnas');
-const summaryNocturnas = document.getElementById('summary-nocturnas');
-const loadingGenerate = document.getElementById('loading-generate');
-const btnRestart = document.getElementById('btn-restart');
-const btnGenerate = document.getElementById('btn-generate');
+const summaryName = document.getElementById("summary-name");
+const summaryAge = document.getElementById("summary-age");
+const summaryInstitution = document.getElementById("summary-institution");
+const summaryDiurnas = document.getElementById("summary-diurnas");
+const summaryNocturnas = document.getElementById("summary-nocturnas");
+const loadingGenerate = document.getElementById("loading-generate");
+const btnRestart = document.getElementById("btn-restart");
+const btnGenerate = document.getElementById("btn-generate");
 
 // =====================================================
 // FUNCIONES DE NAVEGACIÓN
@@ -74,21 +130,21 @@ const btnGenerate = document.getElementById('btn-generate');
 function goToStep(stepNumber) {
   // Actualizar paso actual
   appState.currentStep = stepNumber;
-  
+
   // Actualizar pasos del wizard
   steps.forEach((step, index) => {
-    step.classList.toggle('active', index + 1 === stepNumber);
+    step.classList.toggle("active", index + 1 === stepNumber);
   });
-  
+
   // Actualizar indicadores de progreso
   progressSteps.forEach((step, index) => {
     const stepNum = index + 1;
-    step.classList.toggle('active', stepNum === stepNumber);
-    step.classList.toggle('completed', stepNum < stepNumber);
+    step.classList.toggle("active", stepNum === stepNumber);
+    step.classList.toggle("completed", stepNum < stepNumber);
   });
-  
+
   // Scroll al top
-  window.scrollTo({ top: 0, behavior: 'smooth' });
+  window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
 function resetWizard() {
@@ -98,27 +154,27 @@ function resetWizard() {
   appState.pdfFile = null;
   appState.pacienteData = null;
   appState.medicionesActualizadas = false;
-  
+
   // Resetear selección de institución
-  institutionCards.forEach(card => card.classList.remove('selected'));
+  institutionCards.forEach((card) => card.classList.remove("selected"));
   btnStep1.disabled = true;
-  
+
   // Resetear PDF
-  pdfInput.value = '';
-  uploadArea.style.display = 'block';
-  fileInfo.style.display = 'none';
+  pdfInput.value = "";
+  uploadArea.style.display = "block";
+  fileInfo.style.display = "none";
   btnStep2.disabled = true;
-  
+
   // Resetear mediciones
-  medicionesDiurnas.value = '';
-  medicionesNocturnas.value = '';
-  
+  medicionesDiurnas.value = "";
+  medicionesNocturnas.value = "";
+
   // Resetear botón de generar informe
   btnGenerate.disabled = false;
-  btnGenerate.textContent = 'Generar y Descargar Informe';
-  btnGenerate.style.background = '';
-  loadingGenerate.style.display = 'none';
-  
+  btnGenerate.textContent = "Generar y Descargar Informe";
+  btnGenerate.style.background = "";
+  loadingGenerate.style.display = "none";
+
   goToStep(1);
 }
 
@@ -126,24 +182,24 @@ function resetWizard() {
 // PASO 1: SELECCIÓN DE INSTITUCIÓN
 // =====================================================
 
-institutionCards.forEach(card => {
-  card.addEventListener('click', () => {
+institutionCards.forEach((card) => {
+  card.addEventListener("click", () => {
     // Remover selección previa
-    institutionCards.forEach(c => c.classList.remove('selected'));
-    
+    institutionCards.forEach((c) => c.classList.remove("selected"));
+
     // Seleccionar tarjeta
-    card.classList.add('selected');
-    
+    card.classList.add("selected");
+
     // Guardar datos
     appState.institucionId = card.dataset.id;
-    appState.institucionNombre = card.querySelector('h3').textContent;
-    
+    appState.institucionNombre = card.querySelector("h3").textContent;
+
     // Habilitar botón siguiente
     btnStep1.disabled = false;
   });
 });
 
-btnStep1.addEventListener('click', () => {
+btnStep1.addEventListener("click", () => {
   goToStep(2);
 });
 
@@ -152,34 +208,34 @@ btnStep1.addEventListener('click', () => {
 // =====================================================
 
 // Click en área de carga
-uploadArea.addEventListener('click', () => {
+uploadArea.addEventListener("click", () => {
   pdfInput.click();
 });
 
 // Drag & Drop
-uploadArea.addEventListener('dragover', (e) => {
+uploadArea.addEventListener("dragover", (e) => {
   e.preventDefault();
-  uploadArea.classList.add('drag-over');
+  uploadArea.classList.add("drag-over");
 });
 
-uploadArea.addEventListener('dragleave', () => {
-  uploadArea.classList.remove('drag-over');
+uploadArea.addEventListener("dragleave", () => {
+  uploadArea.classList.remove("drag-over");
 });
 
-uploadArea.addEventListener('drop', (e) => {
+uploadArea.addEventListener("drop", (e) => {
   e.preventDefault();
-  uploadArea.classList.remove('drag-over');
-  
+  uploadArea.classList.remove("drag-over");
+
   const files = e.dataTransfer.files;
-  if (files.length > 0 && files[0].type === 'application/pdf') {
+  if (files.length > 0 && files[0].type === "application/pdf") {
     handleFileSelect(files[0]);
   } else {
-    alert('Por favor, seleccione un archivo PDF válido');
+    alert("Por favor, seleccione un archivo PDF válido");
   }
 });
 
 // Selección de archivo
-pdfInput.addEventListener('change', (e) => {
+pdfInput.addEventListener("change", (e) => {
   if (e.target.files.length > 0) {
     handleFileSelect(e.target.files[0]);
   }
@@ -188,45 +244,45 @@ pdfInput.addEventListener('change', (e) => {
 // Procesar archivo
 async function handleFileSelect(file) {
   appState.pdfFile = file;
-  
+
   // Mostrar información del archivo
   fileName.textContent = file.name;
   fileSize.textContent = `${(file.size / 1024).toFixed(2)} KB`;
-  uploadArea.style.display = 'none';
-  fileInfo.style.display = 'flex';
-  
+  uploadArea.style.display = "none";
+  fileInfo.style.display = "flex";
+
   // Mostrar spinner
-  loadingPdf.style.display = 'block';
+  loadingPdf.style.display = "block";
   btnStep2.disabled = true;
-  
+
   try {
     // Enviar PDF al backend
     const formData = new FormData();
-    formData.append('pdfFile', file);
-    
+    formData.append("pdfFile", file);
+
     const response = await fetch(`${API_BASE_URL}/api/upload-pdf`, {
-      method: 'POST',
-      body: formData
+      method: "POST",
+      body: formData,
     });
-    
+
     const result = await response.json();
-    
+
     if (result.success) {
       appState.pacienteData = result.data;
-      console.log('✅ Paciente cargado:', appState.pacienteData);
-      
+      console.log("✅ Paciente cargado:", appState.pacienteData);
+
       // Habilitar botón siguiente
       btnStep2.disabled = false;
-      
+
       // Ocultar spinner
-      loadingPdf.style.display = 'none';
+      loadingPdf.style.display = "none";
     } else {
-      throw new Error(result.message || 'Error al cargar el PDF');
+      throw new Error(result.message || "Error al cargar el PDF");
     }
   } catch (error) {
-    console.error('❌ Error:', error);
-    alert('Error al procesar el PDF: ' + error.message);
-    loadingPdf.style.display = 'none';
+    console.error("❌ Error:", error);
+    alert("Error al procesar el PDF: " + error.message);
+    loadingPdf.style.display = "none";
     removeFile();
   }
 }
@@ -235,39 +291,44 @@ async function handleFileSelect(file) {
 function removeFile() {
   appState.pdfFile = null;
   appState.pacienteData = null;
-  pdfInput.value = '';
-  uploadArea.style.display = 'block';
-  fileInfo.style.display = 'none';
+  pdfInput.value = "";
+  uploadArea.style.display = "block";
+  fileInfo.style.display = "none";
   btnStep2.disabled = true;
 }
 
-btnRemoveFile.addEventListener('click', (e) => {
+btnRemoveFile.addEventListener("click", (e) => {
   e.stopPropagation();
   removeFile();
 });
 
 // Navegación
-btnBack2.addEventListener('click', () => {
+btnBack2.addEventListener("click", () => {
   goToStep(1);
 });
 
-btnStep2.addEventListener('click', () => {
+btnStep2.addEventListener("click", () => {
   if (appState.pacienteData) {
     // Actualizar información del paciente en paso 3
     patientName.textContent = appState.pacienteData.nombre;
     patientAge.textContent = appState.pacienteData.edad;
-    
+
     // Pre-llenar campos con valores automáticos calculados del PDF
     const diurnas = appState.pacienteData.medicionesDiurnas || 0;
     const nocturnas = appState.pacienteData.medicionesNocturnas || 0;
-    
+
     // Llenar los inputs editables con valores automáticos
     medicionesDiurnas.value = diurnas;
     medicionesNocturnas.value = nocturnas;
-    
-    console.log('✅ Mediciones automáticas pre-cargadas:', { diurnas, nocturnas });
-    console.log('   (Los campos son editables si necesitas ajustar los valores)');
-    
+
+    console.log("✅ Mediciones automáticas pre-cargadas:", {
+      diurnas,
+      nocturnas,
+    });
+    console.log(
+      "   (Los campos son editables si necesitas ajustar los valores)",
+    );
+
     goToStep(3);
   }
 });
@@ -279,29 +340,28 @@ btnStep2.addEventListener('click', () => {
 // Las mediciones ya están calculadas automáticamente, el paso 3 solo muestra los valores
 // El botón de siguiente está siempre habilitado porque los valores ya vienen del PDF
 
-
 // Navegación
-btnBack3.addEventListener('click', () => {
+btnBack3.addEventListener("click", () => {
   goToStep(2);
 });
 
-btnStep3.addEventListener('click', () => {
+btnStep3.addEventListener("click", () => {
   if (appState.pacienteData) {
     // Leer valores actuales (pueden ser automáticos o editados manualmente)
     const diurnas = parseInt(medicionesDiurnas.value) || 0;
     const nocturnas = parseInt(medicionesNocturnas.value) || 0;
-    
+
     // Actualizar en el estado
     appState.pacienteData.medicionesDiurnas = diurnas;
     appState.pacienteData.medicionesNocturnas = nocturnas;
-    
+
     // Actualizar resumen
     summaryName.textContent = appState.pacienteData.nombre;
     summaryAge.textContent = `${appState.pacienteData.edad} años`;
     summaryInstitution.textContent = appState.institucionNombre;
     summaryDiurnas.textContent = diurnas;
     summaryNocturnas.textContent = nocturnas;
-    
+
     goToStep(4);
   }
 });
@@ -310,70 +370,86 @@ btnStep3.addEventListener('click', () => {
 // PASO 4: GENERACIÓN DE INFORME
 // =====================================================
 
-btnGenerate.addEventListener('click', async () => {
+btnGenerate.addEventListener("click", async () => {
   try {
+    const dniManual = await solicitarDniManualSiCorresponde(
+      appState.institucionId,
+      appState.pacienteData.dni,
+    );
     btnGenerate.disabled = true;
-    loadingGenerate.style.display = 'block';
-    
+    loadingGenerate.style.display = "block";
+
     const response = await fetch(`${API_BASE_URL}/api/generar-informe`, {
-      method: 'POST',
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json'
+        "Content-Type": "application/json",
       },
       body: JSON.stringify({
         paciente: appState.pacienteData,
-        institucionId: appState.institucionId
-      })
+        institucionId: appState.institucionId,
+        dniManual,
+      }),
     });
-    
+
     if (response.ok) {
       // Descargar archivo
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
+      const a = document.createElement("a");
       a.href = url;
-      const contentDisp = response.headers.get('Content-Disposition') || '';
+      const contentDisp = response.headers.get("Content-Disposition") || "";
       const matchRfc = contentDisp.match(/filename\*=UTF-8''(.+)/i);
       const matchPlain = contentDisp.match(/filename="(.+?)"/);
-      a.download = matchRfc ? decodeURIComponent(matchRfc[1]) : matchPlain ? matchPlain[1] : `${appState.pacienteData.nombre}.pdf`;
+      a.download = matchRfc
+        ? decodeURIComponent(matchRfc[1])
+        : matchPlain
+          ? matchPlain[1]
+          : `${appState.pacienteData.nombre}.pdf`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
       window.URL.revokeObjectURL(url);
 
-      loadingGenerate.style.display = 'none';
-      btnGenerate.textContent = '✓ Informe Descargado';
-      btnGenerate.style.background = 'var(--emerald-600)';
+      loadingGenerate.style.display = "none";
+      btnGenerate.textContent = "✓ Informe Descargado";
+      btnGenerate.style.background = "var(--emerald-600)";
 
-      console.log('✅ Informe generado y descargado');
+      console.log("✅ Informe generado y descargado");
     } else if (response.status === 422) {
       const data = await response.json();
       if (data.insuficiente) {
-        loadingGenerate.style.display = 'none';
+        loadingGenerate.style.display = "none";
 
-        const horas = data.duracionHoras != null ? `${data.duracionHoras} hs (mínimo requerido: ${data.horasMinimas} hs)` : '';
-        const mensaje = `Paciente: ${data.nombre}\nFecha del estudio: ${data.fecha}${horas ? '\nDuración del estudio: ' + horas : ''}\n\u{1F6A8} RECLAMAR: el MAPA no cuenta con las horas/mediciones suficientes para realizar el informe.`;
+        const horas =
+          data.duracionHoras != null
+            ? `${data.duracionHoras} hs (mínimo requerido: ${data.horasMinimas} hs)`
+            : "";
+        const mensaje = `Paciente: ${data.nombre}\nFecha del estudio: ${data.fecha}${horas ? "\nDuración del estudio: " + horas : ""}\n\u{1F6A8} RECLAMAR: el MAPA no cuenta con las horas/mediciones suficientes para realizar el informe.`;
         const urlWhatsApp = `https://wa.me/5491131080805?text=${encodeURIComponent(mensaje)}`;
-        window.open(urlWhatsApp, '_blank');
+        window.open(urlWhatsApp, "_blank");
 
-        btnGenerate.textContent = '✓ WhatsApp Abierto';
-        btnGenerate.style.background = '#25D366';
-        console.log('📲 Estudio insuficiente - WhatsApp abierto');
+        btnGenerate.textContent = "✓ WhatsApp Abierto";
+        btnGenerate.style.background = "#25D366";
+        console.log("📲 Estudio insuficiente - WhatsApp abierto");
       }
     } else {
       const error = await response.json();
-      throw new Error(error.message || 'Error al generar el informe');
+      throw new Error(error.message || "Error al generar el informe");
     }
   } catch (error) {
-    console.error('❌ Error:', error);
-    alert('Error al generar el informe: ' + error.message);
-    loadingGenerate.style.display = 'none';
+    console.error("❌ Error:", error);
+    alert("Error al generar el informe: " + error.message);
+    loadingGenerate.style.display = "none";
     btnGenerate.disabled = false;
   }
 });
 
-btnRestart.addEventListener('click', () => {
-  if (confirm('¿Está seguro que desea volver al inicio? Se perderán los datos actuales.')) {
+btnRestart.addEventListener("click", () => {
+  if (
+    confirm(
+      "¿Está seguro que desea volver al inicio? Se perderán los datos actuales.",
+    )
+  ) {
     resetWizard();
   }
 });
@@ -381,58 +457,58 @@ btnRestart.addEventListener('click', () => {
 // =====================================================
 // MODE TABS
 // =====================================================
-const btnModeUnir = document.getElementById('btn-mode-unir');
-const unirSection = document.getElementById('unir-section');
-const btnModeCaratula = document.getElementById('btn-mode-caratula');
-const caratulaSection = document.getElementById('caratula-section');
-const btnModeFecha = document.getElementById('btn-mode-fecha');
-const fechaSection = document.getElementById('fecha-section');
+const btnModeUnir = document.getElementById("btn-mode-unir");
+const unirSection = document.getElementById("unir-section");
+const btnModeCaratula = document.getElementById("btn-mode-caratula");
+const caratulaSection = document.getElementById("caratula-section");
+const btnModeFecha = document.getElementById("btn-mode-fecha");
+const fechaSection = document.getElementById("fecha-section");
 
-const btnModePdf = document.getElementById('btn-mode-pdf');
-const btnModeAwp = document.getElementById('btn-mode-awp');
-const pdfProgress = document.getElementById('pdf-progress');
-const pdfMain = document.querySelector('.main-content');
-const awpSection = document.getElementById('awp-section');
+const btnModePdf = document.getElementById("btn-mode-pdf");
+const btnModeAwp = document.getElementById("btn-mode-awp");
+const pdfProgress = document.getElementById("pdf-progress");
+const pdfMain = document.querySelector(".main-content");
+const awpSection = document.getElementById("awp-section");
 
 function setActiveTab(tab) {
-  btnModePdf.classList.remove('active');
-  btnModeAwp.classList.remove('active');
-  btnModeUnir.classList.remove('active');
-  btnModeCaratula.classList.remove('active');
-  btnModeFecha.classList.remove('active');
-  pdfProgress.classList.add('hidden');
-  pdfMain.classList.add('hidden');
-  awpSection.classList.add('hidden');
-  unirSection.classList.add('hidden');
-  caratulaSection.classList.add('hidden');
-  fechaSection.classList.add('hidden');
-  tab.classList.add('active');
+  btnModePdf.classList.remove("active");
+  btnModeAwp.classList.remove("active");
+  btnModeUnir.classList.remove("active");
+  btnModeCaratula.classList.remove("active");
+  btnModeFecha.classList.remove("active");
+  pdfProgress.classList.add("hidden");
+  pdfMain.classList.add("hidden");
+  awpSection.classList.add("hidden");
+  unirSection.classList.add("hidden");
+  caratulaSection.classList.add("hidden");
+  fechaSection.classList.add("hidden");
+  tab.classList.add("active");
 }
 
-btnModePdf.addEventListener('click', () => {
+btnModePdf.addEventListener("click", () => {
   setActiveTab(btnModePdf);
-  pdfProgress.classList.remove('hidden');
-  pdfMain.classList.remove('hidden');
+  pdfProgress.classList.remove("hidden");
+  pdfMain.classList.remove("hidden");
 });
 
-btnModeAwp.addEventListener('click', () => {
+btnModeAwp.addEventListener("click", () => {
   setActiveTab(btnModeAwp);
-  awpSection.classList.remove('hidden');
+  awpSection.classList.remove("hidden");
 });
 
-btnModeFecha.addEventListener('click', () => {
+btnModeFecha.addEventListener("click", () => {
   setActiveTab(btnModeFecha);
-  fechaSection.classList.remove('hidden');
+  fechaSection.classList.remove("hidden");
 });
 
-btnModeUnir.addEventListener('click', () => {
+btnModeUnir.addEventListener("click", () => {
   setActiveTab(btnModeUnir);
-  unirSection.classList.remove('hidden');
+  unirSection.classList.remove("hidden");
 });
 
-btnModeCaratula.addEventListener('click', () => {
+btnModeCaratula.addEventListener("click", () => {
   setActiveTab(btnModeCaratula);
-  caratulaSection.classList.remove('hidden');
+  caratulaSection.classList.remove("hidden");
 });
 
 // =====================================================
@@ -441,59 +517,66 @@ btnModeCaratula.addEventListener('click', () => {
 
 const awpState = {
   institucionId: null,
-  institucionNombre: null
+  institucionNombre: null,
 };
 
-const awpInstitutionCards = document.querySelectorAll('#awp-institutions .institution-card');
-const awpUploadZone = document.getElementById('awp-upload-zone');
-const awpDropArea = document.getElementById('awp-drop-area');
-const awpInput = document.getElementById('awp-input');
-const awpFileList = document.getElementById('awp-file-list');
+const awpInstitutionCards = document.querySelectorAll(
+  "#awp-institutions .institution-card",
+);
+const awpUploadZone = document.getElementById("awp-upload-zone");
+const awpDropArea = document.getElementById("awp-drop-area");
+const awpInput = document.getElementById("awp-input");
+const awpFileList = document.getElementById("awp-file-list");
 
-awpInstitutionCards.forEach(card => {
-  card.addEventListener('click', () => {
-    awpInstitutionCards.forEach(c => c.classList.remove('selected'));
-    card.classList.add('selected');
+awpInstitutionCards.forEach((card) => {
+  card.addEventListener("click", () => {
+    awpInstitutionCards.forEach((c) => c.classList.remove("selected"));
+    card.classList.add("selected");
     awpState.institucionId = card.dataset.id;
-    awpState.institucionNombre = card.querySelector('h3').textContent;
-    awpUploadZone.classList.remove('hidden');
+    awpState.institucionNombre = card.querySelector("h3").textContent;
+    awpUploadZone.classList.remove("hidden");
   });
 });
 
-awpDropArea.addEventListener('click', () => awpInput.click());
+awpDropArea.addEventListener("click", () => awpInput.click());
 
-awpDropArea.addEventListener('dragover', (e) => {
+awpDropArea.addEventListener("dragover", (e) => {
   e.preventDefault();
-  awpDropArea.classList.add('drag-over');
+  awpDropArea.classList.add("drag-over");
 });
 
-awpDropArea.addEventListener('dragleave', () => {
-  awpDropArea.classList.remove('drag-over');
+awpDropArea.addEventListener("dragleave", () => {
+  awpDropArea.classList.remove("drag-over");
 });
 
-awpDropArea.addEventListener('drop', (e) => {
+awpDropArea.addEventListener("drop", (e) => {
   e.preventDefault();
-  awpDropArea.classList.remove('drag-over');
-  const files = Array.from(e.dataTransfer.files).filter(f => f.name.toLowerCase().endsWith('.awp'));
-  if (files.length === 0) { alert('Solo se aceptan archivos .awp'); return; }
+  awpDropArea.classList.remove("drag-over");
+  const files = Array.from(e.dataTransfer.files).filter((f) =>
+    f.name.toLowerCase().endsWith(".awp"),
+  );
+  if (files.length === 0) {
+    alert("Solo se aceptan archivos .awp");
+    return;
+  }
   procesarTanda(files);
 });
 
-awpInput.addEventListener('change', (e) => {
+awpInput.addEventListener("change", (e) => {
   const files = Array.from(e.target.files);
   if (files.length > 0) procesarTanda(files);
-  awpInput.value = '';
+  awpInput.value = "";
 });
 
 function procesarTanda(files) {
   // Limpiar lista anterior — cada tanda es independiente
-  awpFileList.innerHTML = '';
+  awpFileList.innerHTML = "";
 
   // Crear filas de progreso para todos los archivos
-  const items = files.map(file => {
+  const items = files.map((file) => {
     const itemId = `awp-${Date.now()}-${Math.random().toString(36).slice(2)}`;
-    const item = document.createElement('div');
-    item.className = 'awp-file-item';
+    const item = document.createElement("div");
+    item.className = "awp-file-item";
     item.id = itemId;
     item.innerHTML = `
       <div class="awp-file-info">
@@ -514,31 +597,43 @@ function procesarTanda(files) {
 
 async function procesarAwp(file, itemId) {
   const item = document.getElementById(itemId);
-  const statusEl = item.querySelector('.awp-file-status');
-  const nameEl = item.querySelector('.awp-patient-name');
-  const metaEl = item.querySelector('.awp-file-meta');
+  const statusEl = item.querySelector(".awp-file-status");
+  const nameEl = item.querySelector(".awp-patient-name");
+  const metaEl = item.querySelector(".awp-file-meta");
 
   try {
+    const institution = await obtenerInstitucion(awpState.institucionId);
+    const dniAwp =
+      institution.dniMode === "OPTIONAL" ? await inspeccionarDniAwp(file) : "";
+    const dniManual = await solicitarDniManualSiCorresponde(
+      awpState.institucionId,
+      dniAwp,
+    );
     const formData = new FormData();
-    formData.append('awpFile', file);
-    formData.append('institucionId', awpState.institucionId);
+    formData.append("awpFile", file);
+    formData.append("institucionId", awpState.institucionId);
+    if (dniManual) formData.append("dniManual", dniManual);
 
     const response = await fetch(`${API_BASE_URL}/api/procesar-awp`, {
-      method: 'POST',
-      body: formData
+      method: "POST",
+      body: formData,
     });
 
     if (response.ok) {
       const blob = await response.blob();
-      const disposition = response.headers.get('Content-Disposition') || '';
+      const disposition = response.headers.get("Content-Disposition") || "";
       const matchRfc2 = disposition.match(/filename\*=UTF-8''(.+)/i);
       const matchPlain2 = disposition.match(/filename="(.+?)"/);
-      const nombreArchivo = matchRfc2 ? decodeURIComponent(matchRfc2[1]) : matchPlain2 ? matchPlain2[1] : file.name.replace('.awp', '.pdf');
-      const pacienteNombre = nombreArchivo.replace(/\.(pdf|docx)$/, '');
+      const nombreArchivo = matchRfc2
+        ? decodeURIComponent(matchRfc2[1])
+        : matchPlain2
+          ? matchPlain2[1]
+          : file.name.replace(".awp", ".pdf");
+      const pacienteNombre = nombreArchivo.replace(/\.(pdf|docx)$/, "");
 
       // Auto-descarga inmediata
       const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
+      const a = document.createElement("a");
       a.href = url;
       a.download = nombreArchivo;
       document.body.appendChild(a);
@@ -546,39 +641,41 @@ async function procesarAwp(file, itemId) {
       document.body.removeChild(a);
       setTimeout(() => URL.revokeObjectURL(url), 1000);
 
-      statusEl.textContent = '✅';
+      statusEl.textContent = "✅";
       nameEl.textContent = pacienteNombre;
       metaEl.textContent = `${awpState.institucionNombre} · descargado`;
-      item.classList.add('ok');
-      registrarEnHistorial(pacienteNombre, awpState.institucionNombre, 'ok');
-
+      item.classList.add("ok");
+      registrarEnHistorial(pacienteNombre, awpState.institucionNombre, "ok");
     } else if (response.status === 422) {
       const data = await response.json();
 
-      statusEl.textContent = '⚠️';
+      statusEl.textContent = "⚠️";
       nameEl.textContent = data.nombre || file.name;
-      metaEl.textContent = `Fecha: ${data.fecha || '-'} · estudio insuficiente`;
-      item.classList.add('warn');
-      registrarEnHistorial(data.nombre || file.name, awpState.institucionNombre, 'warn');
+      metaEl.textContent = `Fecha: ${data.fecha || "-"} · estudio insuficiente`;
+      item.classList.add("warn");
+      registrarEnHistorial(
+        data.nombre || file.name,
+        awpState.institucionNombre,
+        "warn",
+      );
 
       const mensaje = `Paciente: ${data.nombre}\nFecha del estudio: ${data.fecha}\n⚠️ Reclamar: el MAPA no cuenta con las horas/mediciones suficientes para realizar el informe.`;
       const urlWhatsApp = `https://wa.me/5491131080805?text=${encodeURIComponent(mensaje)}`;
 
-      const btn = document.createElement('button');
-      btn.className = 'btn-awp-whatsapp';
-      btn.textContent = 'WhatsApp';
-      btn.addEventListener('click', () => window.open(urlWhatsApp, '_blank'));
+      const btn = document.createElement("button");
+      btn.className = "btn-awp-whatsapp";
+      btn.textContent = "WhatsApp";
+      btn.addEventListener("click", () => window.open(urlWhatsApp, "_blank"));
       item.appendChild(btn);
-
     } else {
       throw new Error(`Error ${response.status}`);
     }
   } catch (error) {
-    statusEl.textContent = '❌';
+    statusEl.textContent = "❌";
     nameEl.textContent = file.name;
     metaEl.textContent = error.message;
-    item.classList.add('err');
-    registrarEnHistorial(file.name, awpState.institucionNombre || '-', 'err');
+    item.classList.add("err");
+    registrarEnHistorial(file.name, awpState.institucionNombre || "-", "err");
   }
 }
 
@@ -589,90 +686,98 @@ async function procesarAwp(file, itemId) {
 const fechaState = {
   institucionId: null,
   institucionNombre: null,
-  filas: []
+  filas: [],
 };
 
-const fechaInstitutionCards = document.querySelectorAll('#fecha-institutions .institution-card');
-const fechaUploadZone = document.getElementById('fecha-upload-zone');
-const fechaDropArea = document.getElementById('fecha-drop-area');
-const fechaInput = document.getElementById('fecha-input');
-const fechaFileList = document.getElementById('fecha-file-list');
-const fechaActions = document.getElementById('fecha-actions');
-const fechaLoading = document.getElementById('fecha-loading');
-const btnRegenerarFechas = document.getElementById('btn-regenerar-fechas');
+const fechaInstitutionCards = document.querySelectorAll(
+  "#fecha-institutions .institution-card",
+);
+const fechaUploadZone = document.getElementById("fecha-upload-zone");
+const fechaDropArea = document.getElementById("fecha-drop-area");
+const fechaInput = document.getElementById("fecha-input");
+const fechaFileList = document.getElementById("fecha-file-list");
+const fechaActions = document.getElementById("fecha-actions");
+const fechaLoading = document.getElementById("fecha-loading");
+const btnRegenerarFechas = document.getElementById("btn-regenerar-fechas");
 
-fechaInstitutionCards.forEach(card => {
-  card.addEventListener('click', () => {
-    fechaInstitutionCards.forEach(c => c.classList.remove('selected'));
-    card.classList.add('selected');
+fechaInstitutionCards.forEach((card) => {
+  card.addEventListener("click", () => {
+    fechaInstitutionCards.forEach((c) => c.classList.remove("selected"));
+    card.classList.add("selected");
     fechaState.institucionId = card.dataset.id;
-    fechaState.institucionNombre = card.querySelector('h3').textContent;
-    fechaUploadZone.classList.remove('hidden');
+    fechaState.institucionNombre = card.querySelector("h3").textContent;
+    fechaUploadZone.classList.remove("hidden");
     actualizarBtnRegenerarFechas();
   });
 });
 
-fechaDropArea.addEventListener('click', () => fechaInput.click());
-fechaDropArea.addEventListener('dragover', (event) => {
+fechaDropArea.addEventListener("click", () => fechaInput.click());
+fechaDropArea.addEventListener("dragover", (event) => {
   event.preventDefault();
-  fechaDropArea.classList.add('drag-over');
+  fechaDropArea.classList.add("drag-over");
 });
-fechaDropArea.addEventListener('dragleave', () => fechaDropArea.classList.remove('drag-over'));
-fechaDropArea.addEventListener('drop', (event) => {
+fechaDropArea.addEventListener("dragleave", () =>
+  fechaDropArea.classList.remove("drag-over"),
+);
+fechaDropArea.addEventListener("drop", (event) => {
   event.preventDefault();
-  fechaDropArea.classList.remove('drag-over');
-  const files = Array.from(event.dataTransfer.files).filter(file => file.name.toLowerCase().endsWith('.awp'));
+  fechaDropArea.classList.remove("drag-over");
+  const files = Array.from(event.dataTransfer.files).filter((file) =>
+    file.name.toLowerCase().endsWith(".awp"),
+  );
   if (files.length === 0) {
-    alert('Solo se aceptan archivos .awp');
+    alert("Solo se aceptan archivos .awp");
     return;
   }
   cargarArchivosParaCorregir(files);
 });
 
-fechaInput.addEventListener('change', event => {
-  const files = Array.from(event.target.files).filter(file => file.name.toLowerCase().endsWith('.awp'));
+fechaInput.addEventListener("change", (event) => {
+  const files = Array.from(event.target.files).filter((file) =>
+    file.name.toLowerCase().endsWith(".awp"),
+  );
   if (files.length > 0) cargarArchivosParaCorregir(files);
-  fechaInput.value = '';
+  fechaInput.value = "";
 });
 
 function fechaInformeAInput(fecha) {
-  const match = String(fecha || '').match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
-  return match ? `${match[3]}-${match[2]}-${match[1]}` : '';
+  const match = String(fecha || "").match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+  return match ? `${match[3]}-${match[2]}-${match[1]}` : "";
 }
 
 function crearFilaCorreccion(file) {
-  const item = document.createElement('div');
-  item.className = 'fecha-file-item';
+  const item = document.createElement("div");
+  item.className = "fecha-file-item";
 
-  const paciente = document.createElement('div');
-  paciente.className = 'fecha-file-paciente';
-  const nombre = document.createElement('strong');
-  nombre.textContent = 'Leyendo AWP...';
-  const archivo = document.createElement('span');
+  const paciente = document.createElement("div");
+  paciente.className = "fecha-file-paciente";
+  const nombre = document.createElement("strong");
+  nombre.textContent = "Leyendo AWP...";
+  const archivo = document.createElement("span");
   archivo.textContent = file.name;
   paciente.append(nombre, archivo);
 
-  const detectadaField = document.createElement('div');
-  detectadaField.className = 'fecha-field';
-  const detectadaLabel = document.createElement('label');
-  detectadaLabel.textContent = 'Primera medición';
-  const detectada = document.createElement('strong');
-  detectada.textContent = '...';
+  const detectadaField = document.createElement("div");
+  detectadaField.className = "fecha-field";
+  const detectadaLabel = document.createElement("label");
+  detectadaLabel.textContent = "Primera medición";
+  const detectada = document.createElement("strong");
+  detectada.textContent = "...";
   detectadaField.append(detectadaLabel, detectada);
 
-  const correccionField = document.createElement('div');
-  correccionField.className = 'fecha-field';
-  const correccionLabel = document.createElement('label');
-  correccionLabel.textContent = 'Fecha del informe';
-  const input = document.createElement('input');
-  input.type = 'date';
+  const correccionField = document.createElement("div");
+  correccionField.className = "fecha-field";
+  const correccionLabel = document.createElement("label");
+  correccionLabel.textContent = "Fecha del informe";
+  const input = document.createElement("input");
+  input.type = "date";
   input.disabled = true;
-  input.addEventListener('input', actualizarBtnRegenerarFechas);
+  input.addEventListener("input", actualizarBtnRegenerarFechas);
   correccionField.append(correccionLabel, input);
 
-  const status = document.createElement('div');
-  status.className = 'fecha-row-status';
-  status.textContent = 'Inspeccionando...';
+  const status = document.createElement("div");
+  status.className = "fecha-row-status";
+  status.textContent = "Inspeccionando...";
 
   item.append(paciente, detectadaField, correccionField, status);
   fechaFileList.appendChild(item);
@@ -681,9 +786,9 @@ function crearFilaCorreccion(file) {
 }
 
 async function cargarArchivosParaCorregir(files) {
-  fechaFileList.innerHTML = '';
+  fechaFileList.innerHTML = "";
   fechaState.filas = files.map(crearFilaCorreccion);
-  fechaActions.classList.remove('hidden');
+  fechaActions.classList.remove("hidden");
   actualizarBtnRegenerarFechas();
 
   await Promise.all(fechaState.filas.map(inspeccionarFilaFecha));
@@ -693,39 +798,44 @@ async function cargarArchivosParaCorregir(files) {
 async function inspeccionarFilaFecha(fila) {
   try {
     const formData = new FormData();
-    formData.append('awpFile', fila.file);
+    formData.append("awpFile", fila.file);
     const response = await fetch(`${API_BASE_URL}/api/inspeccionar-awp`, {
-      method: 'POST',
-      body: formData
+      method: "POST",
+      body: formData,
     });
     const result = await response.json();
     if (!response.ok || !result.success) {
       throw new Error(result.message || `Error ${response.status}`);
     }
 
-    fila.nombre.textContent = result.data.nombre || fila.file.name.replace(/\.awp$/i, '');
-    fila.detectada.textContent = result.data.fechaDetectada || 'No detectada';
+    fila.nombre.textContent =
+      result.data.nombre || fila.file.name.replace(/\.awp$/i, "");
+    fila.dni = result.data.dni || "";
+    fila.detectada.textContent = result.data.fechaDetectada || "No detectada";
     fila.input.value = fechaInformeAInput(result.data.fechaDetectada);
     fila.input.disabled = false;
-    fila.status.textContent = result.data.fechaAdministrativa
-      && result.data.fechaAdministrativa !== result.data.fechaDetectada
-      ? `Administrativa: ${result.data.fechaAdministrativa}`
-      : 'Lista para corregir';
+    fila.status.textContent =
+      result.data.fechaAdministrativa &&
+      result.data.fechaAdministrativa !== result.data.fechaDetectada
+        ? `Administrativa: ${result.data.fechaAdministrativa}`
+        : "Lista para corregir";
   } catch (error) {
-    fila.item.classList.add('err');
+    fila.item.classList.add("err");
     fila.status.textContent = error.message;
     fila.lista = false;
   }
 }
 
 function actualizarBtnRegenerarFechas() {
-  const hayFilasValidas = fechaState.filas.some(fila => fila.lista && !fila.input.disabled && fila.input.value);
+  const hayFilasValidas = fechaState.filas.some(
+    (fila) => fila.lista && !fila.input.disabled && fila.input.value,
+  );
   btnRegenerarFechas.disabled = !(fechaState.institucionId && hayFilasValidas);
 }
 
 async function descargarRespuesta(response, nombreAlternativo) {
   const blob = await response.blob();
-  const disposition = response.headers.get('Content-Disposition') || '';
+  const disposition = response.headers.get("Content-Disposition") || "";
   const matchRfc = disposition.match(/filename\*=UTF-8''(.+)/i);
   const matchPlain = disposition.match(/filename="(.+?)"/);
   const nombreArchivo = matchRfc
@@ -734,7 +844,7 @@ async function descargarRespuesta(response, nombreAlternativo) {
       ? matchPlain[1]
       : nombreAlternativo;
   const url = URL.createObjectURL(blob);
-  const anchor = document.createElement('a');
+  const anchor = document.createElement("a");
   anchor.href = url;
   anchor.download = nombreArchivo;
   document.body.appendChild(anchor);
@@ -744,24 +854,31 @@ async function descargarRespuesta(response, nombreAlternativo) {
   return nombreArchivo;
 }
 
-btnRegenerarFechas.addEventListener('click', async () => {
-  const filas = fechaState.filas.filter(fila => fila.lista && fila.input.value);
+btnRegenerarFechas.addEventListener("click", async () => {
+  const filas = fechaState.filas.filter(
+    (fila) => fila.lista && fila.input.value,
+  );
   if (filas.length === 0) return;
 
   btnRegenerarFechas.disabled = true;
-  fechaLoading.classList.remove('hidden');
+  fechaLoading.classList.remove("hidden");
 
   for (const fila of filas) {
     try {
-      fila.status.textContent = 'Regenerando...';
+      fila.status.textContent = "Regenerando...";
+      const dniManual = await solicitarDniManualSiCorresponde(
+        fechaState.institucionId,
+        fila.dni,
+      );
       const formData = new FormData();
-      formData.append('awpFile', fila.file);
-      formData.append('institucionId', fechaState.institucionId);
-      formData.append('fechaCorregida', fila.input.value);
+      formData.append("awpFile", fila.file);
+      formData.append("institucionId", fechaState.institucionId);
+      formData.append("fechaCorregida", fila.input.value);
+      if (dniManual) formData.append("dniManual", dniManual);
 
       const response = await fetch(`${API_BASE_URL}/api/procesar-awp`, {
-        method: 'POST',
-        body: formData
+        method: "POST",
+        body: formData,
       });
       if (!response.ok) {
         const error = await response.json();
@@ -770,23 +887,23 @@ btnRegenerarFechas.addEventListener('click', async () => {
 
       const nombreArchivo = await descargarRespuesta(
         response,
-        fila.file.name.replace(/\.awp$/i, '.pdf')
+        fila.file.name.replace(/\.awp$/i, ".pdf"),
       );
-      fila.item.classList.remove('err');
-      fila.item.classList.add('ok');
-      fila.status.textContent = 'Descargado';
+      fila.item.classList.remove("err");
+      fila.item.classList.add("ok");
+      fila.status.textContent = "Descargado";
       registrarEnHistorial(
-        nombreArchivo.replace(/\.(pdf|docx)$/i, ''),
+        nombreArchivo.replace(/\.(pdf|docx)$/i, ""),
         `${fechaState.institucionNombre} (fecha corregida)`,
-        'ok'
+        "ok",
       );
     } catch (error) {
-      fila.item.classList.add('err');
+      fila.item.classList.add("err");
       fila.status.textContent = error.message;
     }
   }
 
-  fechaLoading.classList.add('hidden');
+  fechaLoading.classList.add("hidden");
   actualizarBtnRegenerarFechas();
 });
 
@@ -795,26 +912,28 @@ btnRegenerarFechas.addEventListener('click', async () => {
 // =====================================================
 
 const unirState = { institucionId: null, sinP: null, conP: null };
-const btnUnir = document.getElementById('btn-unir');
-const unirLoading = document.getElementById('unir-loading');
-const unirUploadZone = document.getElementById('unir-upload-zone');
-const unirCaratulaInfo = document.getElementById('unir-caratula-info');
-const unirInstitutionCards = document.querySelectorAll('#unir-institutions .institution-card');
+const btnUnir = document.getElementById("btn-unir");
+const unirLoading = document.getElementById("unir-loading");
+const unirUploadZone = document.getElementById("unir-upload-zone");
+const unirCaratulaInfo = document.getElementById("unir-caratula-info");
+const unirInstitutionCards = document.querySelectorAll(
+  "#unir-institutions .institution-card",
+);
 
 // Instituciones que requieren carátula
-const TIENE_CARATULA = ['consultoriosMedicos', 'darmed', 'institutoDelta'];
+const TIENE_CARATULA = ["consultoriosMedicos", "darmed", "institutoDelta"];
 
-unirInstitutionCards.forEach(card => {
-  card.addEventListener('click', () => {
-    unirInstitutionCards.forEach(c => c.classList.remove('selected'));
-    card.classList.add('selected');
+unirInstitutionCards.forEach((card) => {
+  card.addEventListener("click", () => {
+    unirInstitutionCards.forEach((c) => c.classList.remove("selected"));
+    card.classList.add("selected");
     unirState.institucionId = card.dataset.id;
-    unirUploadZone.classList.remove('hidden');
+    unirUploadZone.classList.remove("hidden");
     // Mostrar/ocultar aviso de carátula
     if (TIENE_CARATULA.includes(unirState.institucionId)) {
-      unirCaratulaInfo.classList.remove('hidden');
+      unirCaratulaInfo.classList.remove("hidden");
     } else {
-      unirCaratulaInfo.classList.add('hidden');
+      unirCaratulaInfo.classList.add("hidden");
     }
     actualizarBtnUnir();
   });
@@ -826,63 +945,72 @@ function setupUnirSlot(dropId, inputId, nameId, key) {
   const nameEl = document.getElementById(nameId);
   if (!drop || !input || !nameEl) return;
 
-  drop.addEventListener('click', () => input.click());
-  drop.addEventListener('dragover', (e) => { e.preventDefault(); drop.classList.add('drag-over'); });
-  drop.addEventListener('dragleave', () => drop.classList.remove('drag-over'));
-  drop.addEventListener('drop', (e) => {
+  drop.addEventListener("click", () => input.click());
+  drop.addEventListener("dragover", (e) => {
     e.preventDefault();
-    drop.classList.remove('drag-over');
-    const file = e.dataTransfer.files[0];
-    if (file?.type === 'application/pdf') setUnirFile(key, file, drop, nameEl);
-    else alert('Solo se aceptan archivos PDF');
+    drop.classList.add("drag-over");
   });
-  input.addEventListener('change', (e) => {
+  drop.addEventListener("dragleave", () => drop.classList.remove("drag-over"));
+  drop.addEventListener("drop", (e) => {
+    e.preventDefault();
+    drop.classList.remove("drag-over");
+    const file = e.dataTransfer.files[0];
+    if (file?.type === "application/pdf") setUnirFile(key, file, drop, nameEl);
+    else alert("Solo se aceptan archivos PDF");
+  });
+  input.addEventListener("change", (e) => {
     if (e.target.files[0]) setUnirFile(key, e.target.files[0], drop, nameEl);
-    input.value = '';
+    input.value = "";
   });
 }
 
 function setUnirFile(key, file, drop, nameEl) {
   unirState[key] = file;
-  drop.classList.add('loaded');
+  drop.classList.add("loaded");
   nameEl.textContent = file.name;
   actualizarBtnUnir();
 }
 
 function actualizarBtnUnir() {
-  btnUnir.disabled = !(unirState.institucionId && unirState.sinP && unirState.conP);
+  btnUnir.disabled = !(
+    unirState.institucionId &&
+    unirState.sinP &&
+    unirState.conP
+  );
   if (btnUnir.disabled === false) {
-    btnUnir.textContent = 'Unir y Descargar PDF';
-    btnUnir.style.background = '';
+    btnUnir.textContent = "Unir y Descargar PDF";
+    btnUnir.style.background = "";
   }
 }
 
-setupUnirSlot('unir-drop-sinp', 'unir-input-sinp', 'unir-name-sinp', 'sinP');
-setupUnirSlot('unir-drop-conp', 'unir-input-conp', 'unir-name-conp', 'conP');
+setupUnirSlot("unir-drop-sinp", "unir-input-sinp", "unir-name-sinp", "sinP");
+setupUnirSlot("unir-drop-conp", "unir-input-conp", "unir-name-conp", "conP");
 
-btnUnir.addEventListener('click', async () => {
+btnUnir.addEventListener("click", async () => {
   try {
     btnUnir.disabled = true;
-    unirLoading.classList.remove('hidden');
+    unirLoading.classList.remove("hidden");
 
     const formData = new FormData();
-    formData.append('pdfSinP', unirState.sinP);
-    formData.append('pdfConP', unirState.conP);
-    formData.append('institucionId', unirState.institucionId);
+    formData.append("pdfSinP", unirState.sinP);
+    formData.append("pdfConP", unirState.conP);
+    formData.append("institucionId", unirState.institucionId);
 
     const response = await fetch(`${API_BASE_URL}/api/unir-pdfs`, {
-      method: 'POST',
-      body: formData
+      method: "POST",
+      body: formData,
     });
 
     if (response.ok) {
       const blob = await response.blob();
-      const disposition = response.headers.get('Content-Disposition') || '';
+      const disposition = response.headers.get("Content-Disposition") || "";
       const matchRfc = disposition.match(/filename\*=UTF-8''(.+)/i);
-      const nombreArchivo = matchRfc ? decodeURIComponent(matchRfc[1]) : 'informe.pdf';
+      const nombreArchivo = matchRfc
+        ? decodeURIComponent(matchRfc[1])
+        : "informe.pdf";
 
       const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
+      const a = document.createElement("a");
       a.href = url;
       a.download = nombreArchivo;
       document.body.appendChild(a);
@@ -890,17 +1018,17 @@ btnUnir.addEventListener('click', async () => {
       document.body.removeChild(a);
       setTimeout(() => URL.revokeObjectURL(url), 1000);
 
-      btnUnir.textContent = '✓ Descargado';
-      btnUnir.style.background = 'var(--emerald-600)';
+      btnUnir.textContent = "✓ Descargado";
+      btnUnir.style.background = "var(--emerald-600)";
     } else {
       const err = await response.json();
       throw new Error(err.message || `Error ${response.status}`);
     }
   } catch (error) {
-    alert('Error al unir PDFs: ' + error.message);
+    alert("Error al unir PDFs: " + error.message);
     btnUnir.disabled = false;
   } finally {
-    unirLoading.classList.add('hidden');
+    unirLoading.classList.add("hidden");
   }
 });
 
@@ -908,15 +1036,18 @@ btnUnir.addEventListener('click', async () => {
 // HISTORIAL (localStorage)
 // =====================================================
 
-const HISTORIAL_KEY = 'informatron_historial';
-const historialVacio = document.getElementById('historial-vacio');
-const historialTabla = document.getElementById('historial-tabla');
-const historialTbody = document.getElementById('historial-tbody');
-const btnLimpiarHistorial = document.getElementById('btn-limpiar-historial');
+const HISTORIAL_KEY = "informatron_historial";
+const historialVacio = document.getElementById("historial-vacio");
+const historialTabla = document.getElementById("historial-tabla");
+const historialTbody = document.getElementById("historial-tbody");
+const btnLimpiarHistorial = document.getElementById("btn-limpiar-historial");
 
 function cargarHistorial() {
-  try { return JSON.parse(localStorage.getItem(HISTORIAL_KEY)) || []; }
-  catch { return []; }
+  try {
+    return JSON.parse(localStorage.getItem(HISTORIAL_KEY)) || [];
+  } catch {
+    return [];
+  }
 }
 
 function guardarHistorial(historial) {
@@ -933,27 +1064,34 @@ function agregarAlHistorial(entry) {
 function renderHistorial() {
   const historial = cargarHistorial();
   if (historial.length === 0) {
-    historialVacio.style.display = 'block';
-    historialTabla.style.display = 'none';
+    historialVacio.style.display = "block";
+    historialTabla.style.display = "none";
     return;
   }
-  historialVacio.style.display = 'none';
-  historialTabla.style.display = 'table';
+  historialVacio.style.display = "none";
+  historialTabla.style.display = "table";
 
-  historialTbody.innerHTML = historial.map(e => {
-    const estadoLabel = e.estado === 'ok' ? '✅ Descargado' : e.estado === 'warn' ? '⚠️ Insuficiente' : '❌ Error';
-    return `<tr>
+  historialTbody.innerHTML = historial
+    .map((e) => {
+      const estadoLabel =
+        e.estado === "ok"
+          ? "✅ Descargado"
+          : e.estado === "warn"
+            ? "⚠️ Insuficiente"
+            : "❌ Error";
+      return `<tr>
       <td>${e.fecha}</td>
       <td>${e.hora}</td>
       <td><strong>${e.nombre}</strong></td>
       <td>${e.institucion}</td>
       <td><span class="historial-estado ${e.estado}">${estadoLabel}</span></td>
     </tr>`;
-  }).join('');
+    })
+    .join("");
 }
 
-btnLimpiarHistorial.addEventListener('click', () => {
-  if (confirm('¿Limpiar todo el historial?')) {
+btnLimpiarHistorial.addEventListener("click", () => {
+  if (confirm("¿Limpiar todo el historial?")) {
     localStorage.removeItem(HISTORIAL_KEY);
     renderHistorial();
   }
@@ -962,11 +1100,14 @@ btnLimpiarHistorial.addEventListener('click', () => {
 function registrarEnHistorial(nombre, institucion, estado) {
   const ahora = new Date();
   agregarAlHistorial({
-    fecha: ahora.toLocaleDateString('es-AR'),
-    hora:  ahora.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' }),
+    fecha: ahora.toLocaleDateString("es-AR"),
+    hora: ahora.toLocaleTimeString("es-AR", {
+      hour: "2-digit",
+      minute: "2-digit",
+    }),
     nombre,
     institucion,
-    estado
+    estado,
   });
 }
 
@@ -978,80 +1119,91 @@ renderHistorial();
 // =====================================================
 
 const caratulaState = { institucionId: null, pdfFile: null };
-const btnCaratula = document.getElementById('btn-caratula');
-const caratulaLoading = document.getElementById('caratula-loading');
-const caratulaUploadZone = document.getElementById('caratula-upload-zone');
-const caratulaInstitutionCards = document.querySelectorAll('#caratula-institutions .institution-card');
+const btnCaratula = document.getElementById("btn-caratula");
+const caratulaLoading = document.getElementById("caratula-loading");
+const caratulaUploadZone = document.getElementById("caratula-upload-zone");
+const caratulaInstitutionCards = document.querySelectorAll(
+  "#caratula-institutions .institution-card",
+);
 
-caratulaInstitutionCards.forEach(card => {
-  card.addEventListener('click', () => {
-    caratulaInstitutionCards.forEach(c => c.classList.remove('selected'));
-    card.classList.add('selected');
+caratulaInstitutionCards.forEach((card) => {
+  card.addEventListener("click", () => {
+    caratulaInstitutionCards.forEach((c) => c.classList.remove("selected"));
+    card.classList.add("selected");
     caratulaState.institucionId = card.dataset.id;
-    caratulaUploadZone.classList.remove('hidden');
+    caratulaUploadZone.classList.remove("hidden");
     actualizarBtnCaratula();
   });
 });
 
 // Slot de PDF para carátula — implementación directa (sin reusar setupUnirSlot)
-const caratulaDrop = document.getElementById('caratula-drop');
-const caratulaInput = document.getElementById('caratula-input');
-const caratulaNameEl = document.getElementById('caratula-name');
+const caratulaDrop = document.getElementById("caratula-drop");
+const caratulaInput = document.getElementById("caratula-input");
+const caratulaNameEl = document.getElementById("caratula-name");
 
 if (caratulaDrop && caratulaInput && caratulaNameEl) {
-  caratulaDrop.addEventListener('click', () => caratulaInput.click());
-  caratulaDrop.addEventListener('dragover', (e) => { e.preventDefault(); caratulaDrop.classList.add('drag-over'); });
-  caratulaDrop.addEventListener('dragleave', () => caratulaDrop.classList.remove('drag-over'));
-  caratulaDrop.addEventListener('drop', (e) => {
+  caratulaDrop.addEventListener("click", () => caratulaInput.click());
+  caratulaDrop.addEventListener("dragover", (e) => {
     e.preventDefault();
-    caratulaDrop.classList.remove('drag-over');
-    const file = e.dataTransfer.files[0];
-    if (file?.type === 'application/pdf') setCaratulaFile(file);
-    else alert('Solo se aceptan archivos PDF');
+    caratulaDrop.classList.add("drag-over");
   });
-  caratulaInput.addEventListener('change', (e) => {
+  caratulaDrop.addEventListener("dragleave", () =>
+    caratulaDrop.classList.remove("drag-over"),
+  );
+  caratulaDrop.addEventListener("drop", (e) => {
+    e.preventDefault();
+    caratulaDrop.classList.remove("drag-over");
+    const file = e.dataTransfer.files[0];
+    if (file?.type === "application/pdf") setCaratulaFile(file);
+    else alert("Solo se aceptan archivos PDF");
+  });
+  caratulaInput.addEventListener("change", (e) => {
     if (e.target.files[0]) setCaratulaFile(e.target.files[0]);
-    caratulaInput.value = '';
+    caratulaInput.value = "";
   });
 }
 
 function setCaratulaFile(file) {
   caratulaState.caratulaFile = file;
-  caratulaDrop.classList.add('loaded');
+  caratulaDrop.classList.add("loaded");
   caratulaNameEl.textContent = file.name;
   actualizarBtnCaratula();
 }
 
 function actualizarBtnCaratula() {
-  btnCaratula.disabled = !(caratulaState.institucionId && caratulaState.caratulaFile);
+  btnCaratula.disabled = !(
+    caratulaState.institucionId && caratulaState.caratulaFile
+  );
   if (!btnCaratula.disabled) {
-    btnCaratula.textContent = 'Agregar Carátula y Descargar';
-    btnCaratula.style.background = '';
+    btnCaratula.textContent = "Agregar Carátula y Descargar";
+    btnCaratula.style.background = "";
   }
 }
 
-btnCaratula.addEventListener('click', async () => {
+btnCaratula.addEventListener("click", async () => {
   try {
     btnCaratula.disabled = true;
-    caratulaLoading.classList.remove('hidden');
+    caratulaLoading.classList.remove("hidden");
 
     const formData = new FormData();
-    formData.append('pdfFile', caratulaState.caratulaFile);
-    formData.append('institucionId', caratulaState.institucionId);
+    formData.append("pdfFile", caratulaState.caratulaFile);
+    formData.append("institucionId", caratulaState.institucionId);
 
     const response = await fetch(`${API_BASE_URL}/api/agregar-caratula`, {
-      method: 'POST',
-      body: formData
+      method: "POST",
+      body: formData,
     });
 
     if (response.ok) {
       const blob = await response.blob();
-      const disposition = response.headers.get('Content-Disposition') || '';
+      const disposition = response.headers.get("Content-Disposition") || "";
       const matchRfc = disposition.match(/filename\*=UTF-8''(.+)/i);
-      const nombreArchivo = matchRfc ? decodeURIComponent(matchRfc[1]) : 'informe.pdf';
+      const nombreArchivo = matchRfc
+        ? decodeURIComponent(matchRfc[1])
+        : "informe.pdf";
 
       const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
+      const a = document.createElement("a");
       a.href = url;
       a.download = nombreArchivo;
       document.body.appendChild(a);
@@ -1059,17 +1211,17 @@ btnCaratula.addEventListener('click', async () => {
       document.body.removeChild(a);
       setTimeout(() => URL.revokeObjectURL(url), 1000);
 
-      btnCaratula.textContent = '✓ Descargado';
-      btnCaratula.style.background = 'var(--emerald-600)';
+      btnCaratula.textContent = "✓ Descargado";
+      btnCaratula.style.background = "var(--emerald-600)";
     } else {
       const err = await response.json();
       throw new Error(err.message || `Error ${response.status}`);
     }
   } catch (error) {
-    alert('Error al agregar carátula: ' + error.message);
+    alert("Error al agregar carátula: " + error.message);
     btnCaratula.disabled = false;
   } finally {
-    caratulaLoading.classList.add('hidden');
+    caratulaLoading.classList.add("hidden");
   }
 });
 
@@ -1077,5 +1229,5 @@ btnCaratula.addEventListener('click', async () => {
 // INICIALIZACIÓN
 // =====================================================
 
-console.log('🚀 Informatron cargado correctamente');
-console.log('🔗 API:', API_BASE_URL);
+console.log("🚀 Informatron cargado correctamente");
+console.log("🔗 API:", API_BASE_URL);
