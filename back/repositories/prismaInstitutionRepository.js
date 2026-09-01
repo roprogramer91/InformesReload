@@ -31,24 +31,6 @@ class PrismaInstitutionRepository extends InstitutionRepository {
     return this.prisma.institution.update({ where: { id }, data });
   }
 
-  initializeSchemaForTests() {
-    return this.prisma.$executeRawUnsafe(`
-      CREATE TABLE IF NOT EXISTS "Institution" (
-        "id" TEXT NOT NULL PRIMARY KEY,
-        "name" TEXT NOT NULL,
-        "active" BOOLEAN NOT NULL DEFAULT true,
-        "template" TEXT NOT NULL,
-        "hasCover" BOOLEAN NOT NULL DEFAULT false,
-        "dniRequired" BOOLEAN NOT NULL DEFAULT false,
-        "showDni" BOOLEAN NOT NULL DEFAULT false,
-        "dniMode" TEXT NOT NULL DEFAULT 'OPTIONAL',
-        "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-        "updatedAt" DATETIME NOT NULL
-      );
-      CREATE UNIQUE INDEX IF NOT EXISTS "Institution_name_key" ON "Institution"("name")
-    `);
-  }
-
   disconnect() {
     return this.prisma.$disconnect();
   }

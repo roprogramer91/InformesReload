@@ -1,12 +1,16 @@
 const { before, after, test } = require('node:test');
 const assert = require('node:assert/strict');
-const fs = require('node:fs');
-const path = require('node:path');
+const { execFileSync } = require('node:child_process');
 const PizZip = require('pizzip');
 
-const BACK_DIR = path.resolve(__dirname, '..');
-const TEST_DB_PATH = path.join(BACK_DIR, 'prisma', 'institutions-test.db');
-process.env.DATABASE_URL = 'file:./institutions-test.db';
+const TEST_DATABASE_URL = process.env.TEST_DATABASE_URL
+  || 'postgresql://informesreload:informesreload_local@localhost:5432/informes_reload_test?schema=public';
+
+if (!new URL(TEST_DATABASE_URL).pathname.endsWith('/informes_reload_test')) {
+  throw new Error('TEST_DATABASE_URL debe apuntar exclusivamente a la base informes_reload_test');
+}
+
+process.env.DATABASE_URL = TEST_DATABASE_URL;
 
 const { startServer } = require('../index');
 const institutionService = require('../services/institutionService');
@@ -26,8 +30,7 @@ const initialInstitutions = [
 ];
 
 before(async () => {
-  removeTestDatabase();
-  await institutionService.repository.initializeSchemaForTests();
+  resetTestDatabase();
 
   for (const [name, template, hasCover, dniRequired, dniMode] of initialInstitutions) {
     await institutionService.create({
@@ -49,7 +52,6 @@ before(async () => {
 after(async () => {
   if (server) await new Promise(resolve => server.close(resolve));
   await institutionService.disconnect();
-  removeTestDatabase();
 });
 
 test('lista las cuatro instituciones iniciales', async () => {
@@ -204,9 +206,11 @@ test('mantiene generación y carátulas para las cuatro instituciones', async ()
   }
 });
 
-function removeTestDatabase() {
-  for (const suffix of ['', '-journal', '-shm', '-wal']) {
-    const filePath = `${TEST_DB_PATH}${suffix}`;
-    if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
-  }
+function resetTestDatabase() {
+  const prismaCli = require.resolve('prisma/build/index.js');
+  execFileSync(process.execPath, [prismaCli, 'migrate', 'reset', '--force', '--skip-seed'], {
+    cwd: require('node:path').resolve(__dirname, '..'),
+    env: { ...process.env, DATABASE_URL: TEST_DATABASE_URL },
+    stdio: 'inherit',
+  });
 }

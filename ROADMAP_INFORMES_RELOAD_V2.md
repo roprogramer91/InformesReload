@@ -22,13 +22,13 @@
 
 **Fase actual:** FASE 1 — Preparar InformeReload para el módulo Gestor
 
-**Estado:** En progreso en la rama local `feature/instituciones-v1`.
+**Estado:** PostgreSQL local validado en `feature/postgresql-unificado`; Fase 1 continúa en progreso.
 
-**Última actualización:** 2026-08-29
+**Última actualización:** 2026-09-01
 
-**Próximo objetivo:** Validar el primer sistema persistente de instituciones en local, sin frontend dinámico ni reglas funcionales de DNI.
+**Próximo objetivo:** Consolidar la migración PostgreSQL local antes de preparar, mediante una autorización separada, Railway Dev.
 
-**Entorno autorizado:** Local sobre `feature/instituciones-v1`, creada desde `dev`. Producción permanece intacta.
+**Entorno autorizado:** Local sobre `feature/postgresql-unificado`, creada desde `dev`. Railway y producción permanecen intactos.
 
 # Decisión principal y alcance
 
@@ -388,7 +388,7 @@ Institución
 
 ## Persistencia
 
-La interfaz no debe depender de `localStorage` como fuente oficial. Para la Fase 1 se adoptó Prisma con SQLite exclusivamente como persistencia local, encapsulada detrás de un contrato Repository. Ninguna ruta, servicio ni función de negocio debe contener SQL o conocimiento específico de SQLite. La migración futura a PostgreSQL deberá reemplazar el adaptador y la configuración de persistencia sin reescribir la lógica del Gestor.
+La interfaz no debe depender de `localStorage` como fuente oficial. Para la Fase 1 se adoptó Prisma con PostgreSQL en todos los entornos, encapsulado detrás de un contrato Repository. Desarrollo local utiliza PostgreSQL mediante Docker Compose; Railway Dev y la producción futura utilizarán instancias PostgreSQL independientes. El proyecto mantiene un único `schema.prisma` y un único historial de migraciones PostgreSQL. Ninguna ruta, servicio ni función de negocio debe conocer el entorno o contener SQL específico del motor.
 
 # Árbol de carpetas propuesto
 
@@ -859,6 +859,14 @@ Este plan aún no está autorizado para ejecución.
 
 **Consecuencias:** Sólo el adaptador Prisma y el esquema conocen SQLite. La futura migración a PostgreSQL deberá implementar el mismo contrato. Cada institución posee un `id` estable; `name` es editable y único. El modelo registra además `createdAt` y `updatedAt`.
 
+## 2026-08-30 — PostgreSQL unificado en todos los entornos
+
+**Decisión:** Reemplazar SQLite local por PostgreSQL mediante Docker Compose y utilizar PostgreSQL también en Railway Dev y producción futura.
+
+**Motivo:** El módulo se encuentra en una etapa temprana y unificar el motor permite mantener un solo schema Prisma, un solo historial de migraciones y reproducir localmente el comportamiento del despliegue.
+
+**Consecuencias:** La decisión anterior de SQLite queda reemplazada. Las migraciones SQLite dejan de ser el historial activo; desarrollo y pruebas usan bases PostgreSQL locales separadas. El contrato Repository y la lógica funcional permanecen sin conocimiento del motor. Railway no se configura hasta completar la validación local.
+
 ## 2026-08-29 — Separar procesamiento interno de salidas externas
 
 **Decisión:** Las Fases 4 y 5 pueden implementar asociación, organización, Solo Informe, combinado y preparación de destinos, pero no ejecutar automáticamente Drive, email ni archivado externo.
@@ -982,6 +990,16 @@ Este plan aún no está autorizado para ejecución.
   - Resultado: Suite automatizada 7/7 aprobada y validación manual satisfactoria de DNI automático desde AWP y DNI ingresado manualmente.
   - Observaciones: Consultorios Médicos usa `OPTIONAL`, Vital Norte `AWP`, DarMed e Instituto Delta `MANUAL`; no quedaron trazas temporales con datos de pacientes.
 
+## Fase 1 — 2026-08-30
+
+- [x] Prueba: Validación estática del schema PostgreSQL unificado.
+  - Resultado: `prisma validate` aprobó y `prisma migrate diff` produjo una definición equivalente del modelo `Institution`.
+  - Observaciones: El historial activo contiene una única migración inicial PostgreSQL.
+
+- [x] Prueba: Migración, seed y suite de integración sobre PostgreSQL local.
+  - Resultado: Migración inicial aplicada, seed correcto y suite automatizada 7/7 aprobada sobre `informes_reload_test`.
+  - Observaciones: Docker Desktop 29.7.2 y Compose 5.4.0; las cuatro instituciones persistieron después de reiniciar el contenedor. Por un PostgreSQL preexistente en Windows se utilizó el puerto `55432` únicamente en el `.env` local ignorado; el código y la configuración compartida conservan el puerto predeterminado y Railway dependerá de `DATABASE_URL`.
+
 # Definition of Done general
 
 Una fase sólo termina cuando:
@@ -997,6 +1015,23 @@ Una fase sólo termina cuando:
 - [ ] Cualquier promoción fuera de `dev` fue autorizada y verificada por separado.
 
 # Historial de actualizaciones
+
+## 2026-09-01
+
+- [x] Se instaló y verificó Docker Desktop con el engine activo.
+- [x] Se aplicó la migración PostgreSQL inicial y se ejecutó el seed de las cuatro instituciones.
+- [x] La suite de integración PostgreSQL fue aprobada 7/7.
+- [x] Se comprobó persistencia de migraciones e instituciones después de reiniciar el contenedor.
+- [x] El puerto alternativo `55432` quedó limitado a configuración local ignorada y no afecta Railway.
+
+## 2026-08-30
+
+- [x] Se aprobó PostgreSQL como motor único para local, Railway Dev y producción futura.
+- [x] Se creó `feature/postgresql-unificado` desde `dev` actualizado.
+- [x] Se preparó Docker Compose con bases separadas de desarrollo y pruebas y volumen persistente local.
+- [x] Se reemplazó el historial SQLite activo por una migración inicial PostgreSQL.
+- [x] Se retiró del repository la creación de tablas específica de SQLite.
+- [x] La validación local completa se realizó posteriormente el 2026-09-01.
 
 ## 2026-08-29
 

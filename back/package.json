@@ -7,9 +7,14 @@
     "test": "node --test tests/institutions.integration.test.js",
     "dev": "nodemon index.js",
     "start": "node index.js",
+    "db:up": "docker compose -f ../docker-compose.yml up -d --wait postgres",
+    "db:down": "docker compose -f ../docker-compose.yml down",
+    "db:logs": "docker compose -f ../docker-compose.yml logs -f postgres",
     "db:migrate": "prisma migrate dev",
+    "db:deploy": "prisma migrate deploy",
     "db:seed": "node prisma/seed.js",
-    "db:generate": "prisma generate"
+    "db:generate": "prisma generate",
+    "db:setup": "npm run db:generate && npm run db:migrate && npm run db:seed"
   },
   "prisma": {
     "seed": "node prisma/seed.js"

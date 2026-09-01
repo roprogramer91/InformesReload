@@ -4,3 +4,5 @@
 /back/prisma/*.db-journal
 /back/prisma/*.db-shm
 /back/prisma/*.db-wal
+/.env
+/docker-compose.override.yml
