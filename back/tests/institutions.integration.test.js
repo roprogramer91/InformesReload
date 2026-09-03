@@ -18,6 +18,7 @@ const { generarInforme } = require('../functions/crearInforme');
 const { construirPacienteDesdeAwpBuffer } = require('../functions/parseAwp');
 const { resolverDniPaciente } = require('../services/dniService');
 const { institucionTieneCaratula, generarCaratulaDocx } = require('../functions/generarCaratula');
+const { normalizarNombreMultipart } = require('../functions/normalizarNombreMultipart');
 
 let server;
 let baseUrl;
@@ -28,6 +29,20 @@ const initialInstitutions = [
   ['darmed', 'PlantillaC.docx', true, false, 'MANUAL'],
   ['institutoDelta', 'PlantillaD.docx', true, false, 'MANUAL'],
 ];
+
+test('normaliza nombres Unicode recibidos por multipart sin alterar valores correctos', () => {
+  const casos = [
+    ['NUÃ‘EZ LUDMILA.pdf', 'NUÑEZ LUDMILA.pdf'],
+    ['GÃ“MEZ MARÃA.pdf', 'GÓMEZ MARÍA.pdf'],
+    ['MUÃ‘OZ JOSÃ‰.pdf', 'MUÑOZ JOSÉ.pdf'],
+    ['PEREZ JUAN.pdf', 'PEREZ JUAN.pdf'],
+  ];
+
+  for (const [entradaCorrupta, esperado] of casos) {
+    assert.equal(normalizarNombreMultipart(entradaCorrupta), esperado);
+    assert.equal(normalizarNombreMultipart(esperado), esperado);
+  }
+});
 
 before(async () => {
   resetTestDatabase();

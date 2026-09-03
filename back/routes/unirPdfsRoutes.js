@@ -4,6 +4,7 @@ const multer = require('multer');
 const { PDFDocument } = require('pdf-lib');
 const { generarCaratulaDocx, institucionTieneCaratula } = require('../functions/generarCaratula');
 const { convertirDocxAPdf } = require('../functions/convertirPDF');
+const { normalizarNombreMultipart } = require('../functions/normalizarNombreMultipart');
 
 const upload = multer({ storage: multer.memoryStorage() });
 
@@ -33,7 +34,9 @@ router.post('/unir-pdfs', upload.fields([
     }
 
     // Nombre del paciente desde el nombre del archivo sin-P (sin extensión)
-    const nombrePaciente = pdfSinP.originalname.replace(/\.pdf$/i, '').trim();
+    const nombrePaciente = normalizarNombreMultipart(pdfSinP.originalname)
+      .replace(/\.pdf$/i, '')
+      .trim();
     console.log('📎 Uniendo PDFs para:', nombrePaciente, '| Institución:', institucionId);
 
     const merged = await PDFDocument.create();

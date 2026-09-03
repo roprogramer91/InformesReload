@@ -4,6 +4,7 @@ const multer = require('multer');
 const { PDFDocument } = require('pdf-lib');
 const { generarCaratulaDocx, institucionTieneCaratula } = require('../functions/generarCaratula');
 const { convertirDocxAPdf } = require('../functions/convertirPDF');
+const { normalizarNombreMultipart } = require('../functions/normalizarNombreMultipart');
 
 const upload = multer({ storage: multer.memoryStorage() });
 
@@ -30,7 +31,9 @@ router.post('/agregar-caratula', upload.single('pdfFile'), async (req, res) => {
       return res.status(400).json({ success: false, message: `La institución ${institucionId} no tiene carátula` });
     }
 
-    const nombrePaciente = pdfFile.originalname.replace(/\.pdf$/i, '').trim();
+    const nombrePaciente = normalizarNombreMultipart(pdfFile.originalname)
+      .replace(/\.pdf$/i, '')
+      .trim();
     console.log('📋 Agregando carátula para:', nombrePaciente, '| Institución:', institucionId);
 
     const merged = await PDFDocument.create();
