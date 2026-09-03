@@ -1179,3 +1179,102 @@ body {
     grid-template-columns: 1fr;
   }
 }
+
+/* =====================================================
+   CONFIGURACIÓN DNI
+   ===================================================== */
+
+.configuracion-section {
+  padding: 2rem 0;
+}
+
+.configuracion-estado {
+  min-height: 1.5rem;
+  margin-bottom: 1rem;
+  color: var(--gray-600);
+}
+
+.configuracion-estado.error,
+.configuracion-resultado.error {
+  color: #dc2626;
+}
+
+.configuracion-dni-lista {
+  display: grid;
+  gap: 1rem;
+}
+
+.configuracion-institucion {
+  display: grid;
+  grid-template-columns: minmax(180px, 1fr) minmax(170px, auto) minmax(170px, 220px) auto minmax(180px, 1fr);
+  gap: 1rem;
+  align-items: center;
+  padding: 1.25rem;
+  border: 1px solid var(--gray-200);
+  border-radius: 0.75rem;
+  background: var(--white);
+  box-shadow: var(--shadow-sm);
+}
+
+.configuracion-institucion h3 {
+  color: var(--gray-800);
+  font-size: 1rem;
+}
+
+.configuracion-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: var(--gray-700);
+  font-weight: 600;
+}
+
+.configuracion-checkbox input {
+  width: 1.1rem;
+  height: 1.1rem;
+}
+
+.configuracion-campo {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  color: var(--gray-600);
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.configuracion-campo select {
+  padding: 0.55rem 0.65rem;
+  border: 1px solid var(--gray-300);
+  border-radius: 0.45rem;
+  background: var(--white);
+  color: var(--gray-800);
+  font: inherit;
+}
+
+.configuracion-guardar {
+  width: auto;
+  margin: 0;
+}
+
+.configuracion-resultado {
+  min-height: 1.25rem;
+  color: var(--gray-500);
+  font-size: 0.85rem;
+}
+
+.configuracion-resultado.success {
+  color: var(--emerald-600);
+  font-weight: 600;
+}
+
+@media (max-width: 900px) {
+  .configuracion-institucion {
+    grid-template-columns: 1fr;
+    align-items: stretch;
+  }
+
+  .configuracion-guardar {
+    justify-self: start;
+  }
+}

@@ -91,14 +91,36 @@ test('extrae ID Paciente desde PATIENTDATA', () => {
 });
 
 test('resuelve el DNI según la configuración institucional', async () => {
-  assert.equal(await resolverDniPaciente('vitalNorte', '30111222', '99999999'), '30111222');
-  assert.equal(await resolverDniPaciente('darmed', '30111222', '28999888'), '28999888');
+  const configurar = async (name, dniMode, dniRequired) => {
+    const institution = await institutionService.getByName(name);
+    return institutionService.update(institution.id, { dniMode, dniRequired });
+  };
+  const requiereDni = error => error.code === 'DNI_REQUIRED' && error.statusCode === 400;
+
+  await configurar('institutoDelta', 'MANUAL', false);
+  assert.equal(await resolverDniPaciente('institutoDelta', '30111222', ''), '');
+
+  await configurar('institutoDelta', 'MANUAL', true);
+  assert.equal(await resolverDniPaciente('institutoDelta', '30111222', '28999888'), '28999888');
+  await assert.rejects(resolverDniPaciente('institutoDelta', '30111222', ''), requiereDni);
+
+  await configurar('consultoriosMedicos', 'OPTIONAL', false);
+  assert.equal(await resolverDniPaciente('consultoriosMedicos', '', ''), '');
   assert.equal(await resolverDniPaciente('consultoriosMedicos', '30111222', ''), '30111222');
   assert.equal(await resolverDniPaciente('consultoriosMedicos', '', '27666777'), '27666777');
-  await assert.rejects(
-    resolverDniPaciente('institutoDelta', '30111222', ''),
-    error => error.code === 'DNI_MANUAL_REQUIRED' && error.statusCode === 400
-  );
+
+  await configurar('consultoriosMedicos', 'OPTIONAL', true);
+  await assert.rejects(resolverDniPaciente('consultoriosMedicos', '', ''), requiereDni);
+
+  await configurar('vitalNorte', 'AWP', false);
+  assert.equal(await resolverDniPaciente('vitalNorte', '', '99999999'), '');
+
+  await configurar('vitalNorte', 'AWP', true);
+  assert.equal(await resolverDniPaciente('vitalNorte', '30111222', ''), '30111222');
+  await assert.rejects(resolverDniPaciente('vitalNorte', '', '99999999'), requiereDni);
+
+  await configurar('institutoDelta', 'MANUAL', false);
+  await configurar('consultoriosMedicos', 'OPTIONAL', false);
 });
 
 test('crea una institución con el modelo mínimo', async () => {

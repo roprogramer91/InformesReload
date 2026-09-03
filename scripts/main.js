@@ -21,7 +21,8 @@ const API_BASE_URL = _isLocal
 
 let institutionsPromise;
 
-async function obtenerInstitucion(nombre) {
+async function cargarInstituciones(forzar = false) {
+  if (forzar) institutionsPromise = null;
   if (!institutionsPromise) {
     institutionsPromise = fetch(`${API_BASE_URL}/api/instituciones`)
       .then(async (response) => {
@@ -37,7 +38,11 @@ async function obtenerInstitucion(nombre) {
       });
   }
 
-  const institutions = await institutionsPromise;
+  return institutionsPromise;
+}
+
+async function obtenerInstitucion(nombre) {
+  const institutions = await cargarInstituciones();
   const institution = institutions.find((item) => item.name === nombre);
   if (!institution) throw new Error(`Institución no encontrada: ${nombre}`);
   return institution;
@@ -53,9 +58,11 @@ async function solicitarDniManualSiCorresponde(institucionNombre, dniAwp = "") {
   if (!requiereDialogo) return "";
 
   const dniManual = window.prompt("Ingresá el DNI del paciente:", "");
-  if (dniManual === null) throw new Error("Ingreso de DNI cancelado");
-  if (!dniManual.trim()) throw new Error("El DNI no puede estar vacío");
-  return dniManual.trim();
+  const dniNormalizado = dniManual === null ? "" : dniManual.trim();
+  if (!dniNormalizado && institution.dniRequired) {
+    throw new Error("El DNI es obligatorio para esta institución");
+  }
+  return dniNormalizado;
 }
 
 async function inspeccionarDniAwp(file) {
@@ -463,6 +470,10 @@ const btnModeCaratula = document.getElementById("btn-mode-caratula");
 const caratulaSection = document.getElementById("caratula-section");
 const btnModeFecha = document.getElementById("btn-mode-fecha");
 const fechaSection = document.getElementById("fecha-section");
+const btnModeConfiguracion = document.getElementById("btn-mode-configuracion");
+const configuracionSection = document.getElementById("configuracion-section");
+const configuracionDniLista = document.getElementById("configuracion-dni-lista");
+const configuracionDniEstado = document.getElementById("configuracion-dni-estado");
 
 const btnModePdf = document.getElementById("btn-mode-pdf");
 const btnModeAwp = document.getElementById("btn-mode-awp");
@@ -476,12 +487,14 @@ function setActiveTab(tab) {
   btnModeUnir.classList.remove("active");
   btnModeCaratula.classList.remove("active");
   btnModeFecha.classList.remove("active");
+  btnModeConfiguracion.classList.remove("active");
   pdfProgress.classList.add("hidden");
   pdfMain.classList.add("hidden");
   awpSection.classList.add("hidden");
   unirSection.classList.add("hidden");
   caratulaSection.classList.add("hidden");
   fechaSection.classList.add("hidden");
+  configuracionSection.classList.add("hidden");
   tab.classList.add("active");
 }
 
@@ -510,6 +523,99 @@ btnModeCaratula.addEventListener("click", () => {
   setActiveTab(btnModeCaratula);
   caratulaSection.classList.remove("hidden");
 });
+
+btnModeConfiguracion.addEventListener("click", async () => {
+  setActiveTab(btnModeConfiguracion);
+  configuracionSection.classList.remove("hidden");
+  await cargarConfiguracionDni();
+});
+
+async function cargarConfiguracionDni() {
+  configuracionDniEstado.textContent = "Cargando configuración...";
+  configuracionDniEstado.className = "configuracion-estado";
+  configuracionDniLista.replaceChildren();
+
+  try {
+    const institutions = await cargarInstituciones(true);
+    institutions.forEach((institution) => {
+      configuracionDniLista.appendChild(crearFilaConfiguracionDni(institution));
+    });
+    configuracionDniEstado.textContent = institutions.length
+      ? "Valores actuales cargados desde la base de datos."
+      : "No hay instituciones configuradas.";
+  } catch (error) {
+    configuracionDniEstado.textContent = error.message;
+    configuracionDniEstado.classList.add("error");
+  }
+}
+
+function crearFilaConfiguracionDni(institution) {
+  const fila = document.createElement("article");
+  fila.className = "configuracion-institucion";
+
+  const nombre = document.createElement("h3");
+  nombre.textContent = institution.name;
+
+  const obligatorioLabel = document.createElement("label");
+  obligatorioLabel.className = "configuracion-checkbox";
+  const obligatorio = document.createElement("input");
+  obligatorio.type = "checkbox";
+  obligatorio.checked = institution.dniRequired;
+  obligatorioLabel.append(obligatorio, document.createTextNode(" DNI obligatorio"));
+
+  const modoLabel = document.createElement("label");
+  modoLabel.className = "configuracion-campo";
+  modoLabel.append(document.createTextNode("Modo de DNI"));
+  const modo = document.createElement("select");
+  ["AWP", "MANUAL", "OPTIONAL"].forEach((valor) => {
+    const option = document.createElement("option");
+    option.value = valor;
+    option.textContent = valor;
+    option.selected = valor === institution.dniMode;
+    modo.appendChild(option);
+  });
+  modoLabel.appendChild(modo);
+
+  const guardar = document.createElement("button");
+  guardar.type = "button";
+  guardar.className = "btn btn-success configuracion-guardar";
+  guardar.textContent = "Guardar";
+
+  const resultado = document.createElement("div");
+  resultado.className = "configuracion-resultado";
+  resultado.setAttribute("role", "status");
+
+  guardar.addEventListener("click", async () => {
+    guardar.disabled = true;
+    resultado.textContent = "Guardando...";
+    resultado.className = "configuracion-resultado";
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/instituciones/${institution.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          dniRequired: obligatorio.checked,
+          dniMode: modo.value,
+        }),
+      });
+      const result = await response.json();
+      if (!response.ok || !result.success) {
+        throw new Error(result.message || "No se pudo guardar la configuración");
+      }
+      institutionsPromise = null;
+      resultado.textContent = "Configuración guardada.";
+      resultado.classList.add("success");
+    } catch (error) {
+      resultado.textContent = error.message;
+      resultado.classList.add("error");
+    } finally {
+      guardar.disabled = false;
+    }
+  });
+
+  fila.append(nombre, obligatorioLabel, modoLabel, guardar, resultado);
+  return fila;
+}
 
 // =====================================================
 // MODO AWP — LOTE

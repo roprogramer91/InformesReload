@@ -14,24 +14,24 @@ async function resolverDniPaciente(institucionNombre, dniAwp, dniManual) {
 
   const awp = normalizarDni(dniAwp);
   const manual = normalizarDni(dniManual);
+  let dni = '';
 
   if (institution.dniMode === 'MANUAL') {
-    return exigirDniManual(manual);
+    dni = manual;
+  } else if (institution.dniMode === 'OPTIONAL') {
+    dni = awp || manual;
+  } else {
+    dni = awp;
   }
 
-  if (institution.dniMode === 'OPTIONAL') {
-    return awp || exigirDniManual(manual);
+  if (!dni && institution.dniRequired) {
+    const error = new Error('El DNI es obligatorio para esta institución');
+    error.statusCode = 400;
+    error.code = 'DNI_REQUIRED';
+    throw error;
   }
 
-  return awp;
-}
-
-function exigirDniManual(dni) {
-  if (dni) return dni;
-  const error = new Error('Se requiere ingresar manualmente el DNI antes de generar el informe');
-  error.statusCode = 400;
-  error.code = 'DNI_MANUAL_REQUIRED';
-  throw error;
+  return dni;
 }
 
 module.exports = { normalizarDni, resolverDniPaciente };
