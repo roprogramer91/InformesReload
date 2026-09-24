@@ -4,7 +4,11 @@ const assert = require('node:assert/strict');
 const express = require('express');
 
 const { GoogleAuthService } = require('../services/googleAuthService');
-const { GoogleDriveService, FOLDER_MIME_TYPE } = require('../services/googleDriveService');
+const {
+  GoogleDriveService,
+  FOLDER_MIME_TYPE,
+  WORK_FOLDER_NAME_PATTERN,
+} = require('../services/googleDriveService');
 const { createGoogleDriveRouter } = require('../routes/googleDriveRoutes');
 
 function createAuthError() {
@@ -171,6 +175,204 @@ test('persiste tokens renovados emitidos por el cliente OAuth', async () => {
     refresh_token: 'persistent-refresh-token',
     expiry_date: 1790280000000,
   }]);
+});
+
+test('rechaza la jerarquía MAPA cuando falta configurar la raíz', async () => {
+  let authenticationAttempted = false;
+  const service = new GoogleDriveService({
+    env: {},
+    authService: {
+      getAuthenticatedClient: async () => {
+        authenticationAttempted = true;
+        return {};
+      },
+    },
+  });
+  const { server, baseUrl } = await startTestServer(service);
+
+  try {
+    const response = await fetch(`${baseUrl}/api/google/drive/mapa/work-folders`);
+    const body = await response.json();
+
+    assert.equal(response.status, 503);
+    assert.deepEqual(body, {
+      success: false,
+      code: 'GOOGLE_DRIVE_MAPA_ROOT_NOT_CONFIGURED',
+      message: 'Falta configurar GOOGLE_DRIVE_MAPA_ROOT_FOLDER_ID',
+    });
+    assert.equal(authenticationAttempted, false);
+  } finally {
+    await new Promise(resolve => server.close(resolve));
+  }
+});
+
+test('construye la jerarquía MAPA con múltiples meses, vacíos, nombres inválidos y paginación', async () => {
+  const rootId = 'mapa-root-id';
+  const listCalls = [];
+  const responsesByQueryAndPage = new Map([
+    [
+      `'${rootId}' in parents and mimeType = '${FOLDER_MIME_TYPE}' and trashed = false|first`,
+      {
+        files: [{ id: 'month-09', name: 'SEPTIEMBRE', parents: [rootId], trashed: false }],
+        nextPageToken: 'months-page-2',
+      },
+    ],
+    [
+      `'${rootId}' in parents and mimeType = '${FOLDER_MIME_TYPE}' and trashed = false|months-page-2`,
+      { files: [{ id: 'month-10', name: 'OCTUBRE', parents: [rootId], trashed: false }] },
+    ],
+    [
+      `'month-09' in parents and mimeType = '${FOLDER_MIME_TYPE}' and trashed = false|first`,
+      {
+        files: [
+          {
+            id: 'work-23-09',
+            name: 'MAPA 23-09',
+            parents: ['month-09'],
+            createdTime: '2026-09-24T15:21:02.286Z',
+            modifiedTime: '2026-09-24T15:21:02.286Z',
+            trashed: false,
+          },
+          {
+            id: 'not-work-folder',
+            name: 'Notas del mes',
+            parents: ['month-09'],
+            createdTime: '2026-09-01T10:00:00.000Z',
+            modifiedTime: '2026-09-01T10:00:00.000Z',
+            trashed: false,
+          },
+        ],
+        nextPageToken: 'work-page-2',
+      },
+    ],
+    [
+      `'month-09' in parents and mimeType = '${FOLDER_MIME_TYPE}' and trashed = false|work-page-2`,
+      {
+        files: [{
+          id: 'work-24-09',
+          name: 'MAPA 24-09',
+          parents: ['month-09'],
+          createdTime: '2026-09-25T12:00:00.000Z',
+          modifiedTime: '2026-09-25T12:30:00.000Z',
+          trashed: false,
+        }],
+      },
+    ],
+    [
+      `'month-10' in parents and mimeType = '${FOLDER_MIME_TYPE}' and trashed = false|first`,
+      { files: [] },
+    ],
+  ]);
+  const authClient = { kind: 'oauth-client' };
+  const service = new GoogleDriveService({
+    env: { GOOGLE_DRIVE_MAPA_ROOT_FOLDER_ID: `  ${rootId}  ` },
+    authService: {
+      getAuthenticatedClient: async () => authClient,
+      waitForPendingTokenWrites: async client => assert.equal(client, authClient),
+    },
+    driveFactory: auth => {
+      assert.equal(auth, authClient);
+      return {
+        files: {
+          get: async options => {
+            assert.deepEqual(options, {
+              fileId: rootId,
+              fields: 'id, name',
+              supportsAllDrives: true,
+            });
+            return { data: { id: rootId, name: 'Para Informar' } };
+          },
+          list: async options => {
+            listCalls.push(options);
+            const key = `${options.q}|${options.pageToken || 'first'}`;
+            const data = responsesByQueryAndPage.get(key);
+            assert.ok(data, `Respuesta mock ausente para ${key}`);
+            return { data };
+          },
+        },
+      };
+    },
+  });
+  const { server, baseUrl } = await startTestServer(service);
+
+  try {
+    const response = await fetch(`${baseUrl}/api/google/drive/mapa/work-folders`);
+    const text = await response.text();
+
+    assert.equal(response.status, 200);
+    assert.deepEqual(JSON.parse(text), {
+      root: { id: rootId, name: 'Para Informar' },
+      months: [
+        {
+          id: 'month-09',
+          name: 'SEPTIEMBRE',
+          workFolders: [
+            {
+              id: 'work-23-09',
+              name: 'MAPA 23-09',
+              createdTime: '2026-09-24T15:21:02.286Z',
+              modifiedTime: '2026-09-24T15:21:02.286Z',
+            },
+            {
+              id: 'work-24-09',
+              name: 'MAPA 24-09',
+              createdTime: '2026-09-25T12:00:00.000Z',
+              modifiedTime: '2026-09-25T12:30:00.000Z',
+            },
+          ],
+        },
+        {
+          id: 'month-10',
+          name: 'OCTUBRE',
+          workFolders: [],
+        },
+      ],
+    });
+    assert.equal(listCalls.length, 5);
+    assert.equal(listCalls[0].pageToken, undefined);
+    assert.equal(listCalls[1].pageToken, 'months-page-2');
+    assert.equal(listCalls[3].pageToken, 'work-page-2');
+    assert.doesNotMatch(text, /Notas del mes|access_token|refresh_token/i);
+    assert.equal(WORK_FOLDER_NAME_PATTERN.test('MAPA 01-01'), true);
+    assert.equal(WORK_FOLDER_NAME_PATTERN.test('MAPA 1-01'), false);
+    assert.equal(WORK_FOLDER_NAME_PATTERN.test('mapa 01-01'), false);
+  } finally {
+    await new Promise(resolve => server.close(resolve));
+  }
+});
+
+test('devuelve un error controlado si Google falla al leer la jerarquía MAPA', async () => {
+  const service = new GoogleDriveService({
+    env: { GOOGLE_DRIVE_MAPA_ROOT_FOLDER_ID: 'mapa-root-id' },
+    authService: {
+      getAuthenticatedClient: async () => ({ kind: 'oauth-client' }),
+    },
+    driveFactory: () => ({
+      files: {
+        get: async () => {
+          const error = new Error('sensitive Google error');
+          error.response = { status: 500 };
+          throw error;
+        },
+      },
+    }),
+  });
+  const { server, baseUrl } = await startTestServer(service);
+
+  try {
+    const response = await fetch(`${baseUrl}/api/google/drive/mapa/work-folders`);
+    const text = await response.text();
+
+    assert.equal(response.status, 502);
+    assert.deepEqual(JSON.parse(text), {
+      success: false,
+      code: 'GOOGLE_DRIVE_LIST_FAILED',
+      message: 'No se pudieron listar las carpetas de Google Drive',
+    });
+    assert.doesNotMatch(text, /sensitive Google error/i);
+  } finally {
+    await new Promise(resolve => server.close(resolve));
+  }
 });
 
 test('convierte errores de Google en una respuesta controlada sin detalles sensibles', async () => {

@@ -83,6 +83,7 @@ function startServer(port = process.env.PORT || 3000) {
     console.log(`   GET  /api/instituciones - Listar instituciones`);
     console.log(`   GET  /api/google/status - Estado de Google OAuth`);
     console.log(`   GET  /api/google/drive/folders - Listar carpetas de Google Drive`);
+    console.log(`   GET  /api/google/drive/mapa/work-folders - Listar carpetas de trabajo MAPA`);
   });
 }
 

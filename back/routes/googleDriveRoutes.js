@@ -12,6 +12,14 @@ function createGoogleDriveRouter(service = googleDriveService) {
     }
   });
 
+  router.get('/google/drive/mapa/work-folders', async (_req, res) => {
+    try {
+      res.json(await service.getMapaWorkFolders());
+    } catch (error) {
+      sendError(res, error);
+    }
+  });
+
   return router;
 }
 
@@ -21,7 +29,7 @@ function sendError(res, error) {
   res.status(statusCode).json({
     success: false,
     code: error.code || 'GOOGLE_DRIVE_ERROR',
-    message: statusCode >= 500
+    message: statusCode >= 500 && !error.exposeMessage
       ? 'No se pudieron listar las carpetas de Google Drive'
       : error.message,
   });
