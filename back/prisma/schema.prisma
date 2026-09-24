@@ -8,14 +8,72 @@ datasource db {
 }
 
 model Institution {
-  id          String   @id @default(cuid())
-  name        String   @unique
-  active      Boolean @default(true)
+  id          String       @id @default(cuid())
+  name        String       @unique
+  active      Boolean      @default(true)
   template    String
-  hasCover    Boolean @default(false)
-  dniRequired Boolean @default(false)
-  showDni     Boolean @default(false)
-  dniMode     String   @default("OPTIONAL")
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  hasCover    Boolean      @default(false)
+  dniRequired Boolean      @default(false)
+  showDni     Boolean      @default(false)
+  dniMode     String       @default("OPTIONAL")
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  workFolders WorkFolder[]
+}
+
+enum WorkFolderStatus {
+  PENDING
+  IN_PROGRESS
+  READY_FOR_BILLING
+  COMPLETED
+}
+
+enum StudyStatus {
+  AWP_AVAILABLE
+  WAITING_FOR_PDF_P
+  PDF_P_RECEIVED
+  MEDICAL_REPORT_GENERATED
+  FINAL_PDF_GENERATED
+  COMPLETED
+  ERROR
+}
+
+model WorkFolder {
+  id            String           @id @default(cuid())
+  driveFolderId String           @unique
+  name          String
+  workDate      DateTime         @db.Date
+  institutionId String?
+  institution   Institution?     @relation(fields: [institutionId], references: [id], onDelete: SetNull)
+  status        WorkFolderStatus @default(PENDING)
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+  completedAt   DateTime?
+  studies       Study[]
+
+  @@index([institutionId])
+  @@index([workDate])
+  @@index([status])
+}
+
+model Study {
+  id                   String      @id @default(cuid())
+  workFolderId         String
+  workFolder           WorkFolder  @relation(fields: [workFolderId], references: [id], onDelete: Cascade)
+  patientName          String
+  fileBaseName         String
+  awpFileName          String
+  awpDriveFileId       String?
+  pdfPFileName         String?
+  pdfPDriveFileId      String?
+  medicalReportName    String?
+  medicalReportDriveId String?
+  finalPdfName         String?
+  finalPdfDriveId      String?
+  status               StudyStatus @default(AWP_AVAILABLE)
+  createdAt            DateTime    @default(now())
+  updatedAt            DateTime    @updatedAt
+
+  @@unique([workFolderId, fileBaseName])
+  @@index([status])
 }
