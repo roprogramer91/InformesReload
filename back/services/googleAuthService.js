@@ -1,5 +1,6 @@
 const crypto = require('node:crypto');
 const { google } = require('googleapis');
+const PrismaGoogleTokenStore = require('./prismaGoogleTokenStore');
 
 const GOOGLE_SCOPES = Object.freeze([
   'https://www.googleapis.com/auth/drive',
@@ -11,24 +12,6 @@ const REQUIRED_CONFIGURATION = Object.freeze([
   'GOOGLE_CLIENT_SECRET',
   'GOOGLE_REDIRECT_URI',
 ]);
-
-/**
- * Almacenamiento temporal: los tokens se pierden cuando el proceso se reinicia.
- * Una implementación persistente futura debe exponer getTokens() y setTokens().
- */
-class InMemoryGoogleTokenStore {
-  constructor() {
-    this.tokens = null;
-  }
-
-  async getTokens() {
-    return this.tokens ? { ...this.tokens } : null;
-  }
-
-  async setTokens(tokens) {
-    this.tokens = tokens ? { ...tokens } : null;
-  }
-}
 
 /**
  * Almacenamiento temporal del parámetro OAuth state para proteger el callback.
@@ -56,7 +39,7 @@ class InMemoryOAuthStateStore {
 class GoogleAuthService {
   constructor({
     env = process.env,
-    tokenStore = new InMemoryGoogleTokenStore(),
+    tokenStore = new PrismaGoogleTokenStore(),
     stateStore = new InMemoryOAuthStateStore(),
     oauth2ClientFactory,
   } = {}) {
@@ -180,7 +163,5 @@ const googleAuthService = new GoogleAuthService();
 
 module.exports = googleAuthService;
 module.exports.GoogleAuthService = GoogleAuthService;
-module.exports.InMemoryGoogleTokenStore = InMemoryGoogleTokenStore;
 module.exports.InMemoryOAuthStateStore = InMemoryOAuthStateStore;
 module.exports.GOOGLE_SCOPES = GOOGLE_SCOPES;
-

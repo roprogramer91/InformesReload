@@ -77,3 +77,19 @@ model Study {
   @@unique([workFolderId, fileBaseName])
   @@index([status])
 }
+
+model GoogleAuthToken {
+  id           String    @id @default(cuid())
+  provider     String
+  accountKey   String    @default("default")
+  accessToken  String?
+  refreshToken String?
+  scope        String?
+  tokenType    String?
+  expiryDate   DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  @@unique([provider, accountKey])
+  @@index([provider])
+}

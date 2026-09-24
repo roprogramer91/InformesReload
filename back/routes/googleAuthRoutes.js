@@ -38,7 +38,7 @@ function createGoogleAuthRouter(service = googleAuthService) {
 
 function sendError(res, error) {
   const statusCode = error.statusCode || 500;
-  if (statusCode === 500) console.error('Error de Google OAuth:', error);
+  if (statusCode === 500) console.error('Error interno de Google OAuth');
   res.status(statusCode).json({
     success: false,
     code: error.code || 'GOOGLE_AUTH_ERROR',
@@ -48,4 +48,3 @@ function sendError(res, error) {
 
 module.exports = createGoogleAuthRouter();
 module.exports.createGoogleAuthRouter = createGoogleAuthRouter;
-
