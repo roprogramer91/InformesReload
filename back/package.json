@@ -3,6 +3,9 @@
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
+  "engines": {
+    "node": ">=22"
+  },
   "scripts": {
     "test": "node --test tests/institutions.integration.test.js tests/google-auth.test.js",
     "dev": "nodemon index.js",
