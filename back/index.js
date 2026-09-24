@@ -34,6 +34,7 @@ const unirPdfsRoutes = require('./routes/unirPdfsRoutes');
 const agregarCaratulaRoutes = require('./routes/agregarCaratulaRoutes');
 const institutionRoutes = require('./routes/institutionRoutes');
 const googleAuthRoutes = require('./routes/googleAuthRoutes');
+const googleDriveRoutes = require('./routes/googleDriveRoutes');
 
 // Usar rutas
 app.use('/api', pdfRoutes);
@@ -44,6 +45,7 @@ app.use('/api', unirPdfsRoutes);
 app.use('/api', agregarCaratulaRoutes);
 app.use('/api', institutionRoutes);
 app.use('/api', googleAuthRoutes);
+app.use('/api', googleDriveRoutes);
 
 // Ruta raíz
 app.get('/', (req, res) => {
@@ -80,6 +82,7 @@ function startServer(port = process.env.PORT || 3000) {
     console.log(`   POST /api/generar-informe - Generar y descargar informe Word`);
     console.log(`   GET  /api/instituciones - Listar instituciones`);
     console.log(`   GET  /api/google/status - Estado de Google OAuth`);
+    console.log(`   GET  /api/google/drive/folders - Listar carpetas de Google Drive`);
   });
 }
 

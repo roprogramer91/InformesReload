@@ -47,6 +47,7 @@ class GoogleAuthService {
     this.tokenStore = tokenStore;
     this.stateStore = stateStore;
     this.oauth2ClientFactory = oauth2ClientFactory;
+    this.pendingTokenWrites = new WeakMap();
   }
 
   isConfigured() {
@@ -101,10 +102,21 @@ class GoogleAuthService {
 
     oauth2Client.setCredentials(tokens);
     oauth2Client.on('tokens', refreshedTokens => {
-      void this.storeRefreshedTokens(tokens, refreshedTokens);
+      const previousWrite = this.pendingTokenWrites.get(oauth2Client) || Promise.resolve();
+      const pendingWrite = previousWrite.then(() => (
+        this.storeRefreshedTokens(tokens, refreshedTokens)
+      ));
+
+      this.pendingTokenWrites.set(oauth2Client, pendingWrite);
+      pendingWrite.catch(() => {});
     });
 
     return oauth2Client;
+  }
+
+  async waitForPendingTokenWrites(oauth2Client) {
+    const pendingWrite = this.pendingTokenWrites.get(oauth2Client);
+    if (pendingWrite) await pendingWrite;
   }
 
   createOAuth2Client() {
